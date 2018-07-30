@@ -1,0 +1,12 @@
+notests *default:
+  build:
+    target: None
+    configuration: None
+
+  deps:
+    - vostok.devtools
+
+full-build > notests:
+  build:
+    target: Vostok.Commons.Collections.sln
+    configuration: Release

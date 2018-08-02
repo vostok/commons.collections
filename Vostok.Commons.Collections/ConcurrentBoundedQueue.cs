@@ -64,7 +64,10 @@ namespace Vostok.Commons.Collections
                         {
                             Interlocked.Exchange(ref items[currentFrontPtr], item);
 
-                            canDrainAsync.TrySetResult(true);
+                            if (!canDrainAsync.Task.IsCompleted)
+                            {
+                                canDrainAsync.TrySetResult(true);
+                            }
 
                             return true;
                         }

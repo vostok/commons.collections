@@ -10,6 +10,7 @@ namespace Vostok.Commons.Collections
         where T : class
     {
         private readonly T[] items;
+        private readonly object drainLock;
 
         private TaskCompletionSource<bool> canDrainAsync;
         private int itemsCount;
@@ -19,6 +20,7 @@ namespace Vostok.Commons.Collections
         public BoundedBuffer(int capacity)
         {
             items = new T[capacity];
+            drainLock = new object();
             canDrainAsync = new TaskCompletionSource<bool>();
         }
 
@@ -53,29 +55,32 @@ namespace Vostok.Commons.Collections
 
         public int Drain(T[] buffer, int index, int count)
         {
-            var currentCount = itemsCount;
-            if (currentCount == 0)
-                return 0;
-
-            canDrainAsync = new TaskCompletionSource<bool>();
-
-            var resultCount = 0;
-
-            for (var i = 0; i < Math.Min(count, currentCount); i++)
+            lock (drainLock)
             {
-                var itemIndex = (backPtr + i)%items.Length;
-                var item = Interlocked.Exchange(ref items[itemIndex], null);
-                if (item == null)
-                    break;
+                var currentCount = itemsCount;
+                if (currentCount == 0)
+                    return 0;
 
-                buffer[index + resultCount++] = item;
+                canDrainAsync = new TaskCompletionSource<bool>();
+
+                var resultCount = 0;
+
+                for (var i = 0; i < Math.Min(count, currentCount); i++)
+                {
+                    var itemIndex = (backPtr + i) % items.Length;
+                    var item = Interlocked.Exchange(ref items[itemIndex], null);
+                    if (item == null)
+                        break;
+
+                    buffer[index + resultCount++] = item;
+                }
+
+                backPtr = (backPtr + resultCount) % items.Length;
+
+                Interlocked.Add(ref itemsCount, -resultCount);
+
+                return resultCount;
             }
-
-            backPtr = (backPtr + resultCount) % items.Length;
-
-            Interlocked.Add(ref itemsCount, -resultCount);
-
-            return resultCount;
         }
 
         public Task WaitForNewItemsAsync() => canDrainAsync.Task;

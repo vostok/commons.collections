@@ -1,7 +1,14 @@
-notests *default:
+src:
   build:
     target: None
     configuration: None
+
+notests *default:
+  build:
+    target: Vostok.Commons.Collections.sln
+    configuration: NoTests
+    tool:
+      name: dotnet
 
   deps:
     - vostok.devtools

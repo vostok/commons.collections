@@ -9,6 +9,18 @@ namespace Vostok.Commons.Collections.Tests
     [TestFixture]
     internal class BoundedBuffer_Tests
     {
+        private const int Capacity = 5;
+
+        private BoundedBuffer<string> buffer;
+        private string[] drainResult;
+
+        [SetUp]
+        public void SetUp()
+        {
+            buffer = new BoundedBuffer<string>(Capacity);
+            drainResult = new string[Capacity];
+        }
+
         [Test]
         public void TryAdd_should_return_true_when_buffer_has_free_space()
         {
@@ -29,7 +41,7 @@ namespace Vostok.Commons.Collections.Tests
         public void Drain_should_return_empty_array_when_buffer_is_empty()
         {
             buffer.Drain(drainResult, 0, drainResult.Length);
-            drainResult.Should().Equal(Enumerable.Repeat((string)null, Capacity));
+            drainResult.Should().Equal(Enumerable.Repeat((string) null, Capacity));
         }
 
         [TestCase(1, Capacity)]
@@ -54,7 +66,7 @@ namespace Vostok.Commons.Collections.Tests
             buffer.Drain(new string[Capacity], 0, Capacity);
             buffer.Drain(drainResult, 0, drainResult.Length);
 
-            drainResult.Should().Equal(Enumerable.Repeat((string)null, Capacity));
+            drainResult.Should().Equal(Enumerable.Repeat((string) null, Capacity));
         }
 
         [Test]
@@ -89,21 +101,25 @@ namespace Vostok.Commons.Collections.Tests
             }
         }
 
+        [Test]
+        public void Drain_should_not_go_into_cycles_when_provided_array_is_larger_than_capacity()
+        {
+            drainResult = new string[Capacity * 2];
+
+            for (var i = 0; i < Capacity; i++)
+            {
+                buffer.TryAdd(i.ToString());
+            }
+
+            var drainedItems = buffer.Drain(drainResult, 0, drainResult.Length);
+
+            drainedItems.Should().Be(Capacity);
+        }
+
         private IEnumerable<string> GenerateCorrectDrainResult(int count)
         {
             count = Math.Min(count, drainResult.Length);
-            return Enumerable.Range(0, count).Select(j => j.ToString()).Concat(Enumerable.Repeat((string)null, drainResult.Length - count));
+            return Enumerable.Range(0, count).Select(j => j.ToString()).Concat(Enumerable.Repeat((string) null, drainResult.Length - count));
         }
-
-        [SetUp]
-        public void SetUp()
-        {
-            buffer = new BoundedBuffer<string>(Capacity);
-            drainResult = new string[Capacity];
-        }
-
-        private BoundedBuffer<string> buffer;
-        private string[] drainResult;
-        private const int Capacity = 5;
     }
 }

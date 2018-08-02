@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -52,14 +53,15 @@ namespace Vostok.Commons.Collections
 
         public int Drain(T[] buffer, int index, int count)
         {
-            if (itemsCount == 0)
+            var currentCount = itemsCount;
+            if (currentCount == 0)
                 return 0;
 
             canDrainAsync = new TaskCompletionSource<bool>();
 
             var resultCount = 0;
 
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < Math.Min(count, currentCount); i++)
             {
                 var itemIndex = (backPtr + i)%items.Length;
                 var item = Interlocked.Exchange(ref items[itemIndex], null);
@@ -69,7 +71,7 @@ namespace Vostok.Commons.Collections
                 buffer[index + resultCount++] = item;
             }
 
-            backPtr = (backPtr + resultCount)%items.Length;
+            backPtr = (backPtr + resultCount) % items.Length;
 
             Interlocked.Add(ref itemsCount, -resultCount);
 

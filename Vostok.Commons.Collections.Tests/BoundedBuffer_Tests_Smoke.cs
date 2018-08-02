@@ -12,6 +12,7 @@ using NUnit.Framework;
 namespace Vostok.Commons.Collections.Tests
 {
     [TestFixture]
+    [Explicit]
     public class BoundedBuffer_Tests_Smoke
     {
         private BoundedBuffer<MyClass> boundedBuffer;

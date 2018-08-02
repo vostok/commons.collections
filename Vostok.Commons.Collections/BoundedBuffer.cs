@@ -1,8 +1,10 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Vostok.Commons.Collections
 {
+    [PublicAPI]
     internal class BoundedBuffer<T>
         where T : class
     {

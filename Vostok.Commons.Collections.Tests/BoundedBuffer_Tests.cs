@@ -6,7 +6,6 @@ using NUnit.Framework;
 
 namespace Vostok.Commons.Collections.Tests
 {
-
     [TestFixture]
     internal class BoundedBuffer_Tests
     {

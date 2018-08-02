@@ -13,10 +13,10 @@ namespace Vostok.Commons.Collections.Tests
 {
     [TestFixture]
     [Explicit]
-    public class BoundedBuffer_Tests_Smoke
+    public class ConcurrentBoundedQueue_Tests_Smoke
     {
-        private BoundedBuffer<MyClass> boundedBuffer;
-        private ConcurrentQueue<MyClass> queue;
+        private ConcurrentBoundedQueue<MyClass> testedQueue;
+        private ConcurrentQueue<MyClass> referenceQueue;
         private StringBuilder readerInfo;
         private List<int> bufferReads;
         private List<int> queueReads;
@@ -26,8 +26,8 @@ namespace Vostok.Commons.Collections.Tests
         [Test, Repeat(20)]
         public void Writers_should_write_all_data_reader_should_read_all_data()
         {
-            boundedBuffer = new BoundedBuffer<MyClass>(1000);
-            queue = new ConcurrentQueue<MyClass>();
+            testedQueue = new ConcurrentBoundedQueue<MyClass>(1000);
+            referenceQueue = new ConcurrentQueue<MyClass>();
             readerInfo = new StringBuilder();
             bufferReads = new List<int>();
             queueReads = new List<int>();
@@ -50,17 +50,17 @@ namespace Vostok.Commons.Collections.Tests
             // Console.WriteLine(readerInfo.ToString());
             Console.WriteLine($"{DateTime.Now} Reader is done");
 
-            Console.WriteLine($"Buffer: {boundedBuffer.Count}");
-            Console.WriteLine($"Queue: {queue.Count}");
+            Console.WriteLine($"Buffer: {testedQueue.Count}");
+            Console.WriteLine($"Queue: {referenceQueue.Count}");
 
             bufferReads.Should().Equal(queueReads);
             bufferReads.Sum()
                 .Should()
                 .Be(queueReads.Sum())
                 .And.Be(taskCount * 3000 /*Writer().counter*/);
-            boundedBuffer.Count
+            testedQueue.Count
                 .Should()
-                .Be(queue.Count)
+                .Be(referenceQueue.Count)
                 .And.Be(0);
         }
 
@@ -70,8 +70,8 @@ namespace Vostok.Commons.Collections.Tests
             for (var i = 0; i < counter; i++)
             {
                 var val = new MyClass();
-                if (boundedBuffer.TryAdd(val))
-                    queue.Enqueue(val);
+                if (testedQueue.TryAdd(val))
+                    referenceQueue.Enqueue(val);
                 else i--;
             }
 
@@ -87,11 +87,11 @@ namespace Vostok.Commons.Collections.Tests
             var tries = 0;
             while (true)
             {
-                var bbCnt = boundedBuffer.Drain(buffer, 0, size);
+                var bbCnt = testedQueue.Drain(buffer, 0, size);
                 var qCnt = 0;
                 for (var i = 0; i < bbCnt; i++)
                 {
-                    if (queue.TryDequeue(out _))
+                    if (referenceQueue.TryDequeue(out _))
                         qCnt++;
                     else i--;
                 }

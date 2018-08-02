@@ -7,40 +7,40 @@ using NUnit.Framework;
 namespace Vostok.Commons.Collections.Tests
 {
     [TestFixture]
-    internal class BoundedBuffer_Tests
+    internal class ConcurrentBoundedQueue_Tests
     {
         private const int Capacity = 5;
 
-        private BoundedBuffer<string> buffer;
+        private ConcurrentBoundedQueue<string> queue;
         private string[] drainResult;
 
         [SetUp]
         public void SetUp()
         {
-            buffer = new BoundedBuffer<string>(Capacity);
+            queue = new ConcurrentBoundedQueue<string>(Capacity);
             drainResult = new string[Capacity];
         }
 
         [Test]
-        public void TryAdd_should_return_true_when_buffer_has_free_space()
+        public void TryAdd_should_return_true_when_queue_has_free_space()
         {
             for (var i = 0; i < Capacity; i++)
-                buffer.TryAdd(i.ToString()).Should().BeTrue();
+                queue.TryAdd(i.ToString()).Should().BeTrue();
         }
 
         [Test]
-        public void TryAdd_should_return_false_when_buffer_is_full()
+        public void TryAdd_should_return_false_when_queue_is_full()
         {
             for (var i = 0; i < Capacity; i++)
-                buffer.TryAdd(i.ToString());
+                queue.TryAdd(i.ToString());
 
-            buffer.TryAdd(Capacity.ToString()).Should().BeFalse();
+            queue.TryAdd(Capacity.ToString()).Should().BeFalse();
         }
 
         [Test]
-        public void Drain_should_return_empty_array_when_buffer_is_empty()
+        public void Drain_should_return_empty_array_when_queue_is_empty()
         {
-            buffer.Drain(drainResult, 0, drainResult.Length);
+            queue.Drain(drainResult, 0, drainResult.Length);
             drainResult.Should().Equal(Enumerable.Repeat((string) null, Capacity));
         }
 
@@ -49,22 +49,22 @@ namespace Vostok.Commons.Collections.Tests
         public void Drain_should_return_correct_result(int addCount, int drainCount)
         {
             for (var i = 0; i < addCount; i++)
-                buffer.TryAdd(i.ToString());
+                queue.TryAdd(i.ToString());
 
-            buffer.Drain(drainResult, 0, drainCount);
+            queue.Drain(drainResult, 0, drainCount);
 
             drainResult.Should().Equal(GenerateCorrectDrainResult(Math.Min(drainCount, addCount)));
         }
 
         [TestCase(1)]
         [TestCase(Capacity)]
-        public void Drain_should_remove_items_from_buffer(int count)
+        public void Drain_should_remove_items_from_queue(int count)
         {
             for (var i = 0; i < count; i++)
-                buffer.TryAdd(i.ToString());
+                queue.TryAdd(i.ToString());
 
-            buffer.Drain(new string[Capacity], 0, Capacity);
-            buffer.Drain(drainResult, 0, drainResult.Length);
+            queue.Drain(new string[Capacity], 0, Capacity);
+            queue.Drain(drainResult, 0, drainResult.Length);
 
             drainResult.Should().Equal(Enumerable.Repeat((string) null, Capacity));
         }
@@ -73,12 +73,12 @@ namespace Vostok.Commons.Collections.Tests
         public void Drain_should_make_room_for_new_items()
         {
             for (var i = 0; i < Capacity; i++)
-                buffer.TryAdd(i.ToString()).Should().BeTrue();
+                queue.TryAdd(i.ToString()).Should().BeTrue();
 
-            buffer.Drain(drainResult, 0, drainResult.Length);
+            queue.Drain(drainResult, 0, drainResult.Length);
 
             for (var i = 0; i < Capacity; i++)
-                buffer.TryAdd(i.ToString()).Should().BeTrue();
+                queue.TryAdd(i.ToString()).Should().BeTrue();
         }
 
         [Test]
@@ -92,11 +92,11 @@ namespace Vostok.Commons.Collections.Tests
 
                 for (var j = 0; j < count; j++)
                 {
-                    buffer.TryAdd(j.ToString()).Should().BeTrue();
+                    queue.TryAdd(j.ToString()).Should().BeTrue();
                 }
 
                 drainResult = new string[Capacity];
-                buffer.Drain(drainResult, 0, drainResult.Length);
+                queue.Drain(drainResult, 0, drainResult.Length);
                 drainResult.Should().Equal(GenerateCorrectDrainResult(count));
             }
         }
@@ -108,10 +108,10 @@ namespace Vostok.Commons.Collections.Tests
 
             for (var i = 0; i < Capacity; i++)
             {
-                buffer.TryAdd(i.ToString());
+                queue.TryAdd(i.ToString());
             }
 
-            var drainedItems = buffer.Drain(drainResult, 0, drainResult.Length);
+            var drainedItems = queue.Drain(drainResult, 0, drainResult.Length);
 
             drainedItems.Should().Be(Capacity);
         }

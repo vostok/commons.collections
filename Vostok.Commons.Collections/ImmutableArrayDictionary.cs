@@ -7,6 +7,10 @@ using JetBrains.Annotations;
 
 namespace Vostok.Commons.Collections
 {
+    /// <summary>
+    /// <para>An immutable dictionary implemented using an array.</para>
+    /// <para>Search takes linear time, so this collection should only be used with small number of items.</para>
+    /// </summary>
     [PublicAPI]
 #if MAKE_CLASSES_PUBLIC
     public
@@ -17,17 +21,26 @@ namespace Vostok.Commons.Collections
     {
         private const int DefaultCapacity = 4;
 
+        /// <summary>
+        /// An empty <see cref="ImmutableArrayDictionary{TKey,TValue}"/>.
+        /// </summary>
         public static readonly ImmutableArrayDictionary<TKey, TValue> Empty = new ImmutableArrayDictionary<TKey, TValue>(0);
 
         private readonly Pair[] pairs;
 
         private readonly IEqualityComparer<TKey> keyComparer;
 
+        /// <summary>
+        /// Create a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with default capacity.
+        /// </summary>
         public ImmutableArrayDictionary([CanBeNull] IEqualityComparer<TKey> keyComparer = null)
             : this(DefaultCapacity, keyComparer)
         {
         }
 
+        /// <summary>
+        /// Create a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the given capacity.
+        /// </summary>
         public ImmutableArrayDictionary(int capacity, [CanBeNull] IEqualityComparer<TKey> keyComparer = null)
             : this(new Pair[capacity], 0, keyComparer)
         {
@@ -41,24 +54,28 @@ namespace Vostok.Commons.Collections
             Count = count;
         }
 
+        /// <inheritdoc />
         public int Count { get; }
 
+        /// <inheritdoc />
         public IEnumerable<TKey> Keys => this.Select(pair => pair.Key);
 
+        /// <inheritdoc />
         public IEnumerable<TValue> Values => this.Select(pair => pair.Value);
 
+        /// <inheritdoc />
         public TValue this[TKey key] => Find(key, out var value, out _) ? value : throw new KeyNotFoundException($"A value with key '{key}' is not present.");
 
-        public bool ContainsKey(TKey key)
-        {
-            return Find(key, out _, out _);
-        }
+        /// <inheritdoc />
+        public bool ContainsKey(TKey key) => Find(key, out _, out _);
 
-        public bool TryGetValue(TKey key, out TValue value)
-        {
-            return Find(key, out value, out _);
-        }
-
+        /// <inheritdoc />
+        public bool TryGetValue(TKey key, out TValue value) => Find(key, out value, out _);
+        
+        /// <summary>
+        /// Returns a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the same data plus <paramref name="key"/> set to <paramref name="value"/>.
+        /// </summary>
+        /// <param name="overwrite">Specifies the behavior in case a value with the same key exists. If <c>true</c>, the value will be overwritten in the returned dictionary. Otherwise, the new value is ignored and the original dictionary is returned.</param>
         public ImmutableArrayDictionary<TKey, TValue> Set(TKey key, TValue value, bool overwrite = true)
         {
             Pair[] newProperties;
@@ -92,6 +109,9 @@ namespace Vostok.Commons.Collections
             return new ImmutableArrayDictionary<TKey, TValue>(pairs, Count + 1, keyComparer);
         }
 
+        /// <summary>
+        /// Returns a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the same data except the value by <paramref name="key"/>. If there is no such key, the original dictionary is returned.
+        /// </summary>
         public ImmutableArrayDictionary<TKey, TValue> Remove(TKey key)
         {
             if (Find(key, out _, out var oldIndex))
@@ -107,16 +127,14 @@ namespace Vostok.Commons.Collections
             return this;
         }
 
+        /// <inheritdoc />
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             for (var i = 0; i < Count; i++)
                 yield return pairs[i].ToKeyValuePair();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         private bool Find(TKey key, out TValue value, out int index)
         {

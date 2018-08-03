@@ -27,6 +27,9 @@ namespace Vostok.Commons.Collections
         private int frontPtr;
         private volatile int backPtr;
 
+        /// <summary>
+        /// Create a new <see cref="ConcurrentBoundedQueue{T}"/> with the given <paramref name="capacity"/>.
+        /// </summary>
         public ConcurrentBoundedQueue(int capacity)
         {
             items = new T[capacity];

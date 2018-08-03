@@ -60,7 +60,7 @@ namespace Vostok.Commons.Collections
                     {
                         var currentFrontPtr = frontPtr;
 
-                        if (Interlocked.CompareExchange(ref frontPtr, (currentFrontPtr + 1)%items.Length, currentFrontPtr) == currentFrontPtr)
+                        if (Interlocked.CompareExchange(ref frontPtr, (currentFrontPtr + 1) % items.Length, currentFrontPtr) == currentFrontPtr)
                         {
                             Interlocked.Exchange(ref items[currentFrontPtr], item);
 

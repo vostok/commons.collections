@@ -8,7 +8,12 @@ using JetBrains.Annotations;
 namespace Vostok.Commons.Collections
 {
     [PublicAPI]
-    internal class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
+#if MAKE_CLASSES_PUBLIC
+    public
+#else
+    internal
+#endif
+    class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
     {
         private const int DefaultCapacity = 4;
 

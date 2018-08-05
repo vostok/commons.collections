@@ -25,9 +25,31 @@ namespace Vostok.Commons.Collections
             return items.TryDequeue(out var item) ? item : itemFactory();
         }
 
+        public IDisposable Acquire(out T item)
+        {
+            return new Releaser(item = Acquire(), this);
+        }
+
         public void Return(T item)
         {
             items.Enqueue(item);
+        }
+
+        private class Releaser : IDisposable
+        {
+            private readonly T item;
+            private readonly UnboundedObjectPool<T> pool;
+
+            public Releaser(T item, UnboundedObjectPool<T> pool)
+            {
+                this.item = item;
+                this.pool = pool;
+            }
+
+            public void Dispose()
+            {
+                pool.Return(item);
+            }
         }
     }
 }

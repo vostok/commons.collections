@@ -2,6 +2,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Vostok.Commons.Threading;
+
+#pragma warning disable 420
 
 namespace Vostok.Commons.Collections
 {
@@ -22,9 +25,9 @@ namespace Vostok.Commons.Collections
         private readonly T[] items;
         private readonly object drainLock;
 
-        private TaskCompletionSource<bool> canDrainAsync;
-        private int itemsCount;
+        private AsyncManualResetEvent canDrain;
         private int frontPtr;
+        private volatile int itemsCount;
         private volatile int backPtr;
 
         /// <summary>
@@ -34,7 +37,7 @@ namespace Vostok.Commons.Collections
         {
             items = new T[capacity];
             drainLock = new object();
-            canDrainAsync = new TaskCompletionSource<bool>();
+            canDrain = new AsyncManualResetEvent(false);
         }
 
         /// <summary>
@@ -72,10 +75,7 @@ namespace Vostok.Commons.Collections
                         {
                             Interlocked.Exchange(ref items[currentFrontPtr], item);
 
-                            if (!canDrainAsync.Task.IsCompleted)
-                            {
-                                canDrainAsync.TrySetResult(true);
-                            }
+                            canDrain.Set();
 
                             return true;
                         }
@@ -99,8 +99,6 @@ namespace Vostok.Commons.Collections
                 if (currentCount == 0)
                     return 0;
 
-                canDrainAsync = new TaskCompletionSource<bool>();
-
                 var resultCount = 0;
 
                 for (var i = 0; i < Math.Min(count, currentCount); i++)
@@ -117,6 +115,13 @@ namespace Vostok.Commons.Collections
 
                 Interlocked.Add(ref itemsCount, -resultCount);
 
+                if (itemsCount == 0)
+                {
+                    canDrain.Reset();
+                    if (itemsCount > 0)
+                        canDrain.Set();
+                }
+
                 return resultCount;
             }
         }
@@ -124,6 +129,6 @@ namespace Vostok.Commons.Collections
         /// <summary>
         /// Asynchronously waits until something is available to <see cref="Drain"/>.
         /// </summary>
-        public Task WaitForNewItemsAsync() => canDrainAsync.Task;
+        public Task WaitForNewItemsAsync() => canDrain.WaitAsync();
     }
 }

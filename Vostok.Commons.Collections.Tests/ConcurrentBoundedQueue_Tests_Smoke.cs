@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,13 +39,19 @@ namespace Vostok.Commons.Collections.Tests
                 })).ToArray();
 
             var reader = Task.Run(
-                () =>
+                async () =>
                 {
                     trigger.Signal();
                     trigger.Wait();
-                    var buffer = new object[queue.Capacity];
+                    var buffer = new object[10];
                     while (!stop || queue.Count > 0 || writers.Any(w => !w.IsCompleted))
                     {
+                        var x = queue.WaitForNewItemsAsync();
+                        if (await Task.WhenAny(x, Task.Delay(1000)) != x)
+                        {
+                            if (writers.Any(w => !w.IsCompleted))
+                                throw new Exception("Wait seems to be stuck.");
+                        }
                         var count = queue.Drain(buffer, 0, buffer.Length);
                         drainedItemsCount += count;
                     }

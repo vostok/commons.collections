@@ -15,6 +15,7 @@ notests *default:
 
   deps:
     - vostok.devtools
+    - vostok.commons.threading/src
 
 full-build > notests:
   build:

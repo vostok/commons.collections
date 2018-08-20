@@ -44,7 +44,7 @@ namespace Vostok.Commons.Collections.Tests
                     trigger.Signal();
                     trigger.Wait();
                     var buffer = new object[10];
-                    while (!stop || queue.Count > 0 || writers.Any(w => !w.IsCompleted))
+                    while (!stop || writers.Any(w => !w.IsCompleted) || queue.Count > 0)
                     {
                         if (!await queue.TryWaitForNewItemsAsync(100.Milliseconds()))
                         {
@@ -61,6 +61,8 @@ namespace Vostok.Commons.Collections.Tests
             stop = true;
             Task.WaitAll(writers);
             reader.Wait();
+
+            Console.WriteLine($"added: {addedItemsCount}, drained: {drainedItemsCount}");
 
             queue.Count.Should().Be(0);
             drainedItemsCount.Should().Be(addedItemsCount);

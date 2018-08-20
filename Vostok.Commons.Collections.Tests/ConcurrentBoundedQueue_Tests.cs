@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
+using FluentAssertions.Extensions;
 using NUnit.Framework;
+using Vostok.Commons.Testing;
 
 namespace Vostok.Commons.Collections.Tests
 {
@@ -129,7 +131,7 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
-        public void Drain_should_not_reset_event_after_partial_drain()
+        public void WaitForNewItemsAsync_should_not_block_after_partial_drain()
         {
             for (var i = 0; i < Capacity; i++)
             {
@@ -141,6 +143,58 @@ namespace Vostok.Commons.Collections.Tests
             queue.Drain(drainResult, 0, 1);
 
             queue.WaitForNewItemsAsync().IsCompleted.Should().BeTrue();
+        }
+
+        [Test]
+        public void WaitForNewItemsAsync_should_return_after_an_event_is_added()
+        {
+            var task = queue.WaitForNewItemsAsync();
+
+            task.IsCompleted.Should().BeFalse();
+
+            queue.TryAdd("").Should().BeTrue();
+
+            new Action(() => task.IsCompleted.Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsAsync_should_not_reset_event_after_partial_drain()
+        {
+            for (var i = 0; i < Capacity; i++)
+            {
+                queue.TryAdd(i.ToString()).Should().BeTrue();
+            }
+
+            queue.TryWaitForNewItemsAsync(1.Milliseconds()).IsCompleted.Should().BeTrue();
+
+            queue.Drain(drainResult, 0, 1);
+
+            queue.TryWaitForNewItemsAsync(1.Milliseconds()).IsCompleted.Should().BeTrue();
+        }
+
+        [Test]
+        public void TryWaitForNewItemsAsync_should_return_after_timeout()
+        {
+            var task = queue.TryWaitForNewItemsAsync(100.Milliseconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsAsync_should_return_after_an_event_is_added()
+        {
+            var task = queue.TryWaitForNewItemsAsync(100.Milliseconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            queue.TryAdd("").Should().BeTrue();
+
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
         }
 
         private IEnumerable<string> GenerateCorrectDrainResult(int count)

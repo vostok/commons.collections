@@ -15,9 +15,11 @@ notests *default:
 
   deps:
     - vostok.devtools
-    - vostok.commons.threading/src
 
 full-build > notests:
   build:
     target: Vostok.Commons.Collections.sln
     configuration: Release
+
+  deps:
+    - vostok.commons.testing/src

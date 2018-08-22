@@ -12,7 +12,7 @@ namespace Vostok.Commons.Collections
 #else
     internal
 #endif
-    class RecyclingBoundedCache<TKey, TValue>
+        class RecyclingBoundedCache<TKey, TValue>
     {
         private readonly int capacity;
         private readonly IEqualityComparer<TKey> comparer;

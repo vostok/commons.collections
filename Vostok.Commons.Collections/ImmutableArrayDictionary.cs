@@ -17,7 +17,7 @@ namespace Vostok.Commons.Collections
 #else
     internal
 #endif
-    class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
+        class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
     {
         private const int DefaultCapacity = 4;
 
@@ -71,7 +71,7 @@ namespace Vostok.Commons.Collections
 
         /// <inheritdoc />
         public bool TryGetValue(TKey key, out TValue value) => Find(key, out value, out _);
-        
+
         /// <summary>
         /// Returns a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the same data plus <paramref name="key"/> set to <paramref name="value"/>.
         /// </summary>
@@ -174,10 +174,8 @@ namespace Vostok.Commons.Collections
             public TKey Key { get; }
             public TValue Value { get; }
 
-            public KeyValuePair<TKey, TValue> ToKeyValuePair()
-            {
-                return new KeyValuePair<TKey, TValue>(Key, Value);
-            }
+            public KeyValuePair<TKey, TValue> ToKeyValuePair() =>
+                new KeyValuePair<TKey, TValue>(Key, Value);
         }
     }
 }

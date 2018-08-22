@@ -10,30 +10,24 @@ namespace Vostok.Commons.Collections
 #else
     internal
 #endif
-    class UnboundedObjectPool<T>
+        class UnboundedObjectPool<T>
     {
         private readonly ConcurrentQueue<T> items = new ConcurrentQueue<T>();
         private readonly Func<T> itemFactory;
 
-        public UnboundedObjectPool(Func<T> itemFactory)
+        public UnboundedObjectPool([NotNull]Func<T> itemFactory)
         {
-            this.itemFactory = itemFactory;
+            this.itemFactory = itemFactory ?? throw new ArgumentNullException(nameof(itemFactory));
         }
 
-        public T Acquire()
-        {
-            return items.TryDequeue(out var item) ? item : itemFactory();
-        }
+        public T Acquire() =>
+            items.TryDequeue(out var item) ? item : itemFactory();
 
-        public IDisposable Acquire(out T item)
-        {
-            return new Releaser(item = Acquire(), this);
-        }
+        public IDisposable Acquire(out T item) =>
+            new Releaser(item = Acquire(), this);
 
-        public void Return(T item)
-        {
+        public void Return(T item) =>
             items.Enqueue(item);
-        }
 
         private class Releaser : IDisposable
         {

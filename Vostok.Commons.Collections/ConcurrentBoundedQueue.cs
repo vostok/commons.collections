@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
+#pragma warning disable 420
+
 namespace Vostok.Commons.Collections
 {
     /// <summary>
@@ -22,10 +24,10 @@ namespace Vostok.Commons.Collections
         private readonly T[] items;
         private readonly object drainLock;
 
-        private TaskCompletionSource<bool> canDrainAsync;
-        private int itemsCount;
         private int frontPtr;
+        private volatile int itemsCount;
         private volatile int backPtr;
+        private volatile TaskCompletionSource<bool> canDrain;
 
         /// <summary>
         /// Create a new <see cref="ConcurrentBoundedQueue{T}"/> with the given <paramref name="capacity"/>.
@@ -37,7 +39,7 @@ namespace Vostok.Commons.Collections
 
             items = new T[capacity];
             drainLock = new object();
-            canDrainAsync = new TaskCompletionSource<bool>();
+            canDrain = new TaskCompletionSource<bool>();
         }
 
         /// <summary>
@@ -75,10 +77,7 @@ namespace Vostok.Commons.Collections
                         {
                             Interlocked.Exchange(ref items[currentFrontPtr], item);
 
-                            if (!canDrainAsync.Task.IsCompleted)
-                            {
-                                canDrainAsync.TrySetResult(true);
-                            }
+                            canDrain.TrySetResult(true);
 
                             return true;
                         }
@@ -102,8 +101,6 @@ namespace Vostok.Commons.Collections
                 if (currentCount == 0)
                     return 0;
 
-                canDrainAsync = new TaskCompletionSource<bool>();
-
                 var resultCount = 0;
 
                 for (var i = 0; i < Math.Min(count, currentCount); i++)
@@ -120,6 +117,14 @@ namespace Vostok.Commons.Collections
 
                 Interlocked.Add(ref itemsCount, -resultCount);
 
+                if (itemsCount == 0)
+                {
+                    if (canDrain.Task.IsCompleted)
+                        Interlocked.Exchange(ref canDrain, new TaskCompletionSource<bool>());
+                    if (itemsCount > 0)
+                        canDrain.TrySetResult(true);
+                }
+
                 return resultCount;
             }
         }
@@ -127,6 +132,28 @@ namespace Vostok.Commons.Collections
         /// <summary>
         /// Asynchronously waits until something is available to <see cref="Drain"/>.
         /// </summary>
-        public Task WaitForNewItemsAsync() => canDrainAsync.Task;
+        public Task WaitForNewItemsAsync() => canDrain.Task;
+
+        /// <summary>
+        /// Asynchronously waits until something is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.
+        /// </summary>
+        /// <returns><c>true</c> if there is something to drain, <c>false</c> otherwise.</returns>
+        public async Task<bool> TryWaitForNewItemsAsync(TimeSpan timeout)
+        {
+            if (canDrain.Task.IsCompleted)
+                return true;
+
+            using (var cts = new CancellationTokenSource())
+            {
+                var delay = Task.Delay(timeout, cts.Token);
+
+                var result = await Task.WhenAny(canDrain.Task, delay);
+                if (result == delay)
+                    return false;
+
+                cts.Cancel();
+                return true;
+            }
+        }
     }
 }

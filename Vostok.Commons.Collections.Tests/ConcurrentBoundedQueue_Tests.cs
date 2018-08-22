@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
+using FluentAssertions.Extensions;
 using NUnit.Framework;
+using Vostok.Commons.Testing;
 
 namespace Vostok.Commons.Collections.Tests
 {
@@ -25,14 +27,18 @@ namespace Vostok.Commons.Collections.Tests
         public void TryAdd_should_return_true_when_queue_has_free_space()
         {
             for (var i = 0; i < Capacity; i++)
+            {
                 queue.TryAdd(i.ToString()).Should().BeTrue();
+            }
         }
 
         [Test]
         public void TryAdd_should_return_false_when_queue_is_full()
         {
             for (var i = 0; i < Capacity; i++)
+            {
                 queue.TryAdd(i.ToString());
+            }
 
             queue.TryAdd(Capacity.ToString()).Should().BeFalse();
         }
@@ -41,7 +47,7 @@ namespace Vostok.Commons.Collections.Tests
         public void Drain_should_return_empty_array_when_queue_is_empty()
         {
             queue.Drain(drainResult, 0, drainResult.Length);
-            drainResult.Should().Equal(Enumerable.Repeat((string) null, Capacity));
+            drainResult.Should().Equal(Enumerable.Repeat((string)null, Capacity));
         }
 
         [TestCase(1, Capacity)]
@@ -49,7 +55,9 @@ namespace Vostok.Commons.Collections.Tests
         public void Drain_should_return_correct_result(int addCount, int drainCount)
         {
             for (var i = 0; i < addCount; i++)
+            {
                 queue.TryAdd(i.ToString());
+            }
 
             queue.Drain(drainResult, 0, drainCount);
 
@@ -61,24 +69,30 @@ namespace Vostok.Commons.Collections.Tests
         public void Drain_should_remove_items_from_queue(int count)
         {
             for (var i = 0; i < count; i++)
+            {
                 queue.TryAdd(i.ToString());
+            }
 
             queue.Drain(new string[Capacity], 0, Capacity);
             queue.Drain(drainResult, 0, drainResult.Length);
 
-            drainResult.Should().Equal(Enumerable.Repeat((string) null, Capacity));
+            drainResult.Should().Equal(Enumerable.Repeat((string)null, Capacity));
         }
 
         [Test]
         public void Drain_should_make_room_for_new_items()
         {
             for (var i = 0; i < Capacity; i++)
+            {
                 queue.TryAdd(i.ToString()).Should().BeTrue();
+            }
 
             queue.Drain(drainResult, 0, drainResult.Length);
 
             for (var i = 0; i < Capacity; i++)
+            {
                 queue.TryAdd(i.ToString()).Should().BeTrue();
+            }
         }
 
         [Test]
@@ -116,10 +130,77 @@ namespace Vostok.Commons.Collections.Tests
             drainedItems.Should().Be(Capacity);
         }
 
+        [Test]
+        public void WaitForNewItemsAsync_should_not_block_after_partial_drain()
+        {
+            for (var i = 0; i < Capacity; i++)
+            {
+                queue.TryAdd(i.ToString()).Should().BeTrue();
+            }
+
+            queue.WaitForNewItemsAsync().IsCompleted.Should().BeTrue();
+
+            queue.Drain(drainResult, 0, 1);
+
+            queue.WaitForNewItemsAsync().IsCompleted.Should().BeTrue();
+        }
+
+        [Test]
+        public void WaitForNewItemsAsync_should_return_after_an_event_is_added()
+        {
+            var task = queue.WaitForNewItemsAsync();
+
+            task.IsCompleted.Should().BeFalse();
+
+            queue.TryAdd("").Should().BeTrue();
+
+            new Action(() => task.IsCompleted.Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsAsync_should_not_reset_event_after_partial_drain()
+        {
+            for (var i = 0; i < Capacity; i++)
+            {
+                queue.TryAdd(i.ToString()).Should().BeTrue();
+            }
+
+            queue.TryWaitForNewItemsAsync(1.Milliseconds()).IsCompleted.Should().BeTrue();
+
+            queue.Drain(drainResult, 0, 1);
+
+            queue.TryWaitForNewItemsAsync(1.Milliseconds()).IsCompleted.Should().BeTrue();
+        }
+
+        [Test]
+        public void TryWaitForNewItemsAsync_should_return_after_timeout()
+        {
+            var task = queue.TryWaitForNewItemsAsync(100.Milliseconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsAsync_should_return_after_an_event_is_added()
+        {
+            var task = queue.TryWaitForNewItemsAsync(100.Milliseconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            queue.TryAdd("").Should().BeTrue();
+
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
         private IEnumerable<string> GenerateCorrectDrainResult(int count)
         {
             count = Math.Min(count, drainResult.Length);
-            return Enumerable.Range(0, count).Select(j => j.ToString()).Concat(Enumerable.Repeat((string) null, drainResult.Length - count));
+            return Enumerable.Range(0, count).Select(j => j.ToString()).Concat(Enumerable.Repeat((string)null, drainResult.Length - count));
         }
     }
 }

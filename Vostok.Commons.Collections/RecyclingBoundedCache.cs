@@ -12,7 +12,7 @@ namespace Vostok.Commons.Collections
 #else
     internal
 #endif
-        class RecyclingBoundedCache<TKey, TValue>
+    class RecyclingBoundedCache<TKey, TValue>
     {
         private readonly int capacity;
         private readonly IEqualityComparer<TKey> comparer;
@@ -20,6 +20,9 @@ namespace Vostok.Commons.Collections
 
         public RecyclingBoundedCache(int capacity, [CanBeNull] IEqualityComparer<TKey> comparer = null)
         {
+            if (capacity < 0)
+                throw new ArgumentException("The capacity must be non-negative");
+
             this.capacity = capacity;
             this.comparer = comparer ?? EqualityComparer<TKey>.Default;
 

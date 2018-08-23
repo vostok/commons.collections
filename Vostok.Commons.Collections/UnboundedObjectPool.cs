@@ -10,12 +10,12 @@ namespace Vostok.Commons.Collections
 #else
     internal
 #endif
-        class UnboundedObjectPool<T>
+    class UnboundedObjectPool<T>
     {
         private readonly ConcurrentQueue<T> items = new ConcurrentQueue<T>();
         private readonly Func<T> itemFactory;
 
-        public UnboundedObjectPool([NotNull]Func<T> itemFactory)
+        public UnboundedObjectPool([NotNull] Func<T> itemFactory)
         {
             this.itemFactory = itemFactory ?? throw new ArgumentNullException(nameof(itemFactory));
         }

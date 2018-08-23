@@ -18,7 +18,7 @@ namespace Vostok.Commons.Collections
 #else
     internal
 #endif
-        class ConcurrentBoundedQueue<T>
+    class ConcurrentBoundedQueue<T>
         where T : class
     {
         private readonly T[] items;
@@ -34,8 +34,8 @@ namespace Vostok.Commons.Collections
         /// </summary>
         public ConcurrentBoundedQueue(int capacity)
         {
-            if (capacity < 1)
-                throw new ArgumentException("Capacity must be not less than 1");
+            if (capacity < 0)
+                throw new ArgumentException("The capacity must be non-negative");
 
             items = new T[capacity];
             drainLock = new object();

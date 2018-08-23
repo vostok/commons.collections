@@ -17,7 +17,7 @@ namespace Vostok.Commons.Collections
 #else
     internal
 #endif
-        class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
+    class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
     {
         private const int DefaultCapacity = 4;
 
@@ -44,6 +44,8 @@ namespace Vostok.Commons.Collections
         public ImmutableArrayDictionary(int capacity, [CanBeNull] IEqualityComparer<TKey> keyComparer = null)
             : this(new Pair[capacity], 0, keyComparer)
         {
+            if (capacity < 0)
+                throw new ArgumentException("The capacity must be non-negative");
         }
 
         private ImmutableArrayDictionary(Pair[] pairs, int count, IEqualityComparer<TKey> keyComparer)
@@ -58,19 +60,24 @@ namespace Vostok.Commons.Collections
         public int Count { get; }
 
         /// <inheritdoc />
-        public IEnumerable<TKey> Keys => this.Select(pair => pair.Key);
+        public IEnumerable<TKey> Keys => 
+            this.Select(pair => pair.Key);
 
         /// <inheritdoc />
-        public IEnumerable<TValue> Values => this.Select(pair => pair.Value);
+        public IEnumerable<TValue> Values => 
+            this.Select(pair => pair.Value);
 
         /// <inheritdoc />
-        public TValue this[TKey key] => Find(key, out var value, out _) ? value : throw new KeyNotFoundException($"A value with key '{key}' is not present.");
+        public TValue this[TKey key] => 
+            Find(key, out var value, out _) ? value : throw new KeyNotFoundException($"A value with key '{key}' is not present.");
 
         /// <inheritdoc />
-        public bool ContainsKey(TKey key) => Find(key, out _, out _);
+        public bool ContainsKey(TKey key) => 
+            Find(key, out _, out _);
 
         /// <inheritdoc />
-        public bool TryGetValue(TKey key, out TValue value) => Find(key, out value, out _);
+        public bool TryGetValue(TKey key, out TValue value) => 
+            Find(key, out value, out _);
 
         /// <summary>
         /// Returns a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the same data plus <paramref name="key"/> set to <paramref name="value"/>.

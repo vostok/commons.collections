@@ -13,12 +13,7 @@ namespace Vostok.Commons.Collections
     /// <para>The queue has a static predefined capacity. In the event of overflow, new items cannot be added.</para>
     /// </summary>
     [PublicAPI]
-#if MAKE_CLASSES_PUBLIC
-    public
-#else
-    internal
-#endif
-        class ConcurrentBoundedQueue<T>
+    internal class ConcurrentBoundedQueue<T>
         where T : class
     {
         private readonly T[] items;

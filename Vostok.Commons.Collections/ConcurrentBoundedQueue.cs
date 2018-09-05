@@ -27,7 +27,7 @@ namespace Vostok.Commons.Collections
         private int frontPtr;
         private volatile int itemsCount;
         private volatile int backPtr;
-        private volatile TaskCompletionSource<bool> canDrain;
+        private volatile DrainSignal canDrain;
 
         /// <summary>
         /// Create a new <see cref="ConcurrentBoundedQueue{T}"/> with the given <paramref name="capacity"/>.
@@ -39,7 +39,7 @@ namespace Vostok.Commons.Collections
 
             items = new T[capacity];
             drainLock = new object();
-            canDrain = new TaskCompletionSource<bool>();
+            canDrain = new DrainSignal();
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace Vostok.Commons.Collections
                         {
                             Interlocked.Exchange(ref items[currentFrontPtr], item);
 
-                            canDrain.TrySetResult(true);
+                            canDrain.Set();
 
                             return true;
                         }
@@ -120,9 +120,10 @@ namespace Vostok.Commons.Collections
                 if (itemsCount == 0)
                 {
                     if (canDrain.Task.IsCompleted)
-                        Interlocked.Exchange(ref canDrain, new TaskCompletionSource<bool>());
+                        Interlocked.Exchange(ref canDrain, new DrainSignal());
+
                     if (itemsCount > 0)
-                        canDrain.TrySetResult(true);
+                        canDrain.Set();
                 }
 
                 return resultCount;
@@ -153,6 +154,17 @@ namespace Vostok.Commons.Collections
 
                 cts.Cancel();
                 return true;
+            }
+        }
+
+        private class DrainSignal : TaskCompletionSource<bool>
+        {
+            private int signalGate;
+
+            public void Set()
+            {
+                if (!Task.IsCompleted && Interlocked.Exchange(ref signalGate, 1) == 0)
+                    System.Threading.Tasks.Task.Run(() => TrySetResult(true));
             }
         }
     }

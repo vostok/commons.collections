@@ -138,11 +138,11 @@ namespace Vostok.Commons.Collections.Tests
                 queue.TryAdd(i.ToString()).Should().BeTrue();
             }
 
-            queue.WaitForNewItemsAsync().IsCompleted.Should().BeTrue();
+            queue.WaitForNewItemsAsync().Wait(1.Seconds()).Should().BeTrue();
 
             queue.Drain(drainResult, 0, 1);
 
-            queue.WaitForNewItemsAsync().IsCompleted.Should().BeTrue();
+            queue.WaitForNewItemsAsync().Wait(1.Seconds()).Should().BeTrue();
         }
 
         [Test]

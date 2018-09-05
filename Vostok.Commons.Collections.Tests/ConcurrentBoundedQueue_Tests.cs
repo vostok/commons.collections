@@ -166,11 +166,11 @@ namespace Vostok.Commons.Collections.Tests
                 queue.TryAdd(i.ToString()).Should().BeTrue();
             }
 
-            queue.TryWaitForNewItemsAsync(1.Milliseconds()).IsCompleted.Should().BeTrue();
+            queue.TryWaitForNewItemsAsync(1.Seconds()).Result.Should().BeTrue();
 
             queue.Drain(drainResult, 0, 1);
 
-            queue.TryWaitForNewItemsAsync(1.Milliseconds()).IsCompleted.Should().BeTrue();
+            queue.TryWaitForNewItemsAsync(1.Seconds()).Result.Should().BeTrue();
         }
 
         [Test]

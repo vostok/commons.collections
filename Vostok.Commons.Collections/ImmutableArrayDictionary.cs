@@ -45,7 +45,7 @@ namespace Vostok.Commons.Collections
             : this(new Pair[capacity], 0, keyComparer)
         {
             if (capacity < 0)
-                throw new ArgumentException("The capacity must be non-negative");
+                throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be non-negative");
         }
 
         private ImmutableArrayDictionary(Pair[] pairs, int count, IEqualityComparer<TKey> keyComparer)

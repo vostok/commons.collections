@@ -21,7 +21,7 @@ namespace Vostok.Commons.Collections
         public RecyclingBoundedCache(int capacity, [CanBeNull] IEqualityComparer<TKey> comparer = null)
         {
             if (capacity < 0)
-                throw new ArgumentException("The capacity must be non-negative");
+                throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be non-negative");
 
             this.capacity = capacity;
             this.comparer = comparer ?? EqualityComparer<TKey>.Default;

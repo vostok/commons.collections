@@ -46,7 +46,7 @@ namespace Vostok.Commons.Collections.Tests
                     var buffer = new object[10];
                     while (!stop || writers.Any(w => !w.IsCompleted) || queue.Count > 0)
                     {
-                        if (!await queue.TryWaitForNewItemsAsync(100.Milliseconds()))
+                        if (!await queue.TryWaitForNewItemsAsync(100.Milliseconds()).ConfigureAwait(false))
                         {
                             if (writers.Any(w => !w.IsCompleted))
                                 throw new Exception("Wait seems to be stuck.");

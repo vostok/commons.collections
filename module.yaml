@@ -14,7 +14,7 @@ notests *default:
     - Vostok.Commons.Collections/bin/Release/netstandard2.0/Vostok.Commons.Collections.dll
 
   deps:
-    - vostok.devtools@publicize
+    - vostok.devtools
 
 full-build > notests:
   build:

@@ -12,12 +12,7 @@ namespace Vostok.Commons.Collections
     /// <para>Search takes linear time, so this collection should only be used with small number of items.</para>
     /// </summary>
     [PublicAPI]
-#if MAKE_CLASSES_PUBLIC
-    public
-#else
-    internal
-#endif
-    class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
+    internal class ImmutableArrayDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>
     {
         private const int DefaultCapacity = 4;
 
@@ -60,23 +55,19 @@ namespace Vostok.Commons.Collections
         public int Count { get; }
 
         /// <inheritdoc />
-        public IEnumerable<TKey> Keys => 
+        public IEnumerable<TKey> Keys =>
             this.Select(pair => pair.Key);
 
         /// <inheritdoc />
-        public IEnumerable<TValue> Values => 
+        public IEnumerable<TValue> Values =>
             this.Select(pair => pair.Value);
 
         /// <inheritdoc />
-        public TValue this[TKey key] => 
-            Find(key, out var value, out _) ? value : throw new KeyNotFoundException($"A value with key '{key}' is not present.");
-
-        /// <inheritdoc />
-        public bool ContainsKey(TKey key) => 
+        public bool ContainsKey(TKey key) =>
             Find(key, out _, out _);
 
         /// <inheritdoc />
-        public bool TryGetValue(TKey key, out TValue value) => 
+        public bool TryGetValue(TKey key, out TValue value) =>
             Find(key, out value, out _);
 
         /// <summary>
@@ -140,6 +131,10 @@ namespace Vostok.Commons.Collections
             for (var i = 0; i < Count; i++)
                 yield return pairs[i].ToKeyValuePair();
         }
+
+        /// <inheritdoc />
+        public TValue this[TKey key] =>
+            Find(key, out var value, out _) ? value : throw new KeyNotFoundException($"A value with key '{key}' is not present.");
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

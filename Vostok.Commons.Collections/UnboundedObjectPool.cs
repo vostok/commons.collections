@@ -5,12 +5,7 @@ using JetBrains.Annotations;
 namespace Vostok.Commons.Collections
 {
     [PublicAPI]
-#if MAKE_CLASSES_PUBLIC
-    public
-#else
-    internal
-#endif
-    class UnboundedObjectPool<T>
+    internal class UnboundedObjectPool<T>
     {
         private readonly ConcurrentQueue<T> items = new ConcurrentQueue<T>();
         private readonly Func<T> itemFactory;

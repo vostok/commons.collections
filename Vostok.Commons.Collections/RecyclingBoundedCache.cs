@@ -7,12 +7,7 @@ using JetBrains.Annotations;
 namespace Vostok.Commons.Collections
 {
     [PublicAPI]
-#if MAKE_CLASSES_PUBLIC
-    public
-#else
-    internal
-#endif
-    class RecyclingBoundedCache<TKey, TValue>
+    internal class RecyclingBoundedCache<TKey, TValue>
     {
         private readonly int capacity;
         private readonly IEqualityComparer<TKey> comparer;

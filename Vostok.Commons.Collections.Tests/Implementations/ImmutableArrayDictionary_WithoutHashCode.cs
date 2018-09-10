@@ -10,7 +10,7 @@ namespace Vostok.Commons.Collections.Tests.Implementations
 
         public static readonly ImmutableArrayDictionary<TKey, TValue> Empty = new ImmutableArrayDictionary<TKey, TValue>(0);
 
-        private readonly Pair[] pairs;
+        private readonly Pair[] pairs; 
 
         private readonly IEqualityComparer<TKey> keyComparer;
 

@@ -78,7 +78,7 @@ namespace Vostok.Commons.Collections
         {
             Pair[] newProperties;
 
-            var newProperty = new Pair(key, value);
+            var newProperty = new Pair(key, value, ComputeHash(key));
 
             if (Find(key, out var oldValue, out var oldIndex))
             {
@@ -138,12 +138,15 @@ namespace Vostok.Commons.Collections
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        private int ComputeHash(TKey key) => key == null ? 0 : keyComparer.GetHashCode(key);
+
         private bool Find(TKey key, out TValue value, out int index)
         {
+            var hash = ComputeHash(key);
             for (var i = 0; i < Count; i++)
             {
                 var property = pairs[i];
-                if (keyComparer.Equals(property.Key, key))
+                if (hash == property.Hash && keyComparer.Equals(property.Key, key))
                 {
                     index = i;
                     value = property.Value;
@@ -167,14 +170,16 @@ namespace Vostok.Commons.Collections
 
         private class Pair
         {
-            public Pair(TKey key, TValue value)
+            public Pair(TKey key, TValue value, int hash)
             {
                 Key = key;
                 Value = value;
+                Hash = hash;
             }
 
             public TKey Key { get; }
             public TValue Value { get; }
+            public int Hash { get; }
 
             public KeyValuePair<TKey, TValue> ToKeyValuePair() =>
                 new KeyValuePair<TKey, TValue>(Key, Value);

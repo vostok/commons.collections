@@ -16,10 +16,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageReleaseNotes>TODO</PackageReleaseNotes>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <Title>Vostok common collections library</Title>
     <Description>Common collections library for microservice toolkit http://vostok.tools/</Description>
   </PropertyGroup>

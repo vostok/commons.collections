@@ -27,7 +27,7 @@
   <PropertyGroup>
     <PackageProjectUrl>https://github.com/vostok/commons.collections</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/vostok/commons.collections/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageTags>vostok vostok.commons.collections</PackageTags>
+    <PackageTags>vostok vostok.commons</PackageTags>
     <RepositoryUrl>https://github.com/vostok/commons.collections</RepositoryUrl>
   </PropertyGroup>
 

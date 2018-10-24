@@ -100,7 +100,7 @@ namespace Vostok.Commons.Collections.Tests
 
                 Task.WhenAll(drainTask, addTask).GetAwaiter().GetResult();
 
-                if (queue.TryWaitForNewItemsAsync(TimeSpan.FromSeconds(1)).IsCompleted && queue.Count == 0)
+                if (queue.WaitForNewItemsAsync().IsCompleted && queue.Count == 0)
                     Assert.Fail("Queue is broken: TryWaitForNewItemsAsync is completed, but queue is empty.");
             }
         }

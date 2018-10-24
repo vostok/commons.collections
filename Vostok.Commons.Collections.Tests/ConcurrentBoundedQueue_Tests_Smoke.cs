@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,10 +8,10 @@ using NUnit.Framework;
 
 namespace Vostok.Commons.Collections.Tests
 {
-    [Explicit]
     [TestFixture]
     public class ConcurrentBoundedQueue_Tests_Smoke
     {
+        [Explicit]
         [TestCase(1000, 4)]
         [TestCase(1000, 1)]
         [TestCase(2, 4)]
@@ -66,6 +66,43 @@ namespace Vostok.Commons.Collections.Tests
 
             queue.Count.Should().Be(0);
             drainedItemsCount.Should().Be(addedItemsCount);
+        }
+
+        [Test]
+        public void Should_not_have_race_between_Add_and_Drain_that_turns_queue_wait_task_to_inconsistent_state()
+        {
+            for (var j = 0; j < 10; ++j)
+            {
+                var queue = new ConcurrentBoundedQueue<object>(100);
+                var o = new object();
+
+                var addTask = Task.Run(
+                    () =>
+                    {
+                        for (var i = 0; i < 1000000; i++)
+                        {
+                            if (!queue.TryAdd(o))
+                                i--;
+                        }
+                    });
+
+                var drainTask = Task.Run(
+                    () =>
+                    {
+                        var arr = new object[1000];
+                        while (true)
+                        {
+                            var drained = queue.Drain(arr, 0, arr.Length);
+                            if (drained == 0 && addTask.IsCompleted)
+                                return;
+                        }
+                    });
+
+                Task.WhenAll(drainTask, addTask).GetAwaiter().GetResult();
+
+                if (queue.TryWaitForNewItemsAsync(TimeSpan.FromSeconds(1)).IsCompleted && queue.Count == 0)
+                    Assert.Fail("Queue is broken: TryWaitForNewItemsAsync is completed, but queue is empty.");
+            }
         }
     }
 }

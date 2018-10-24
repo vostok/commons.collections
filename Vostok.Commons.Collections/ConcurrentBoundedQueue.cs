@@ -114,8 +114,7 @@ namespace Vostok.Commons.Collections
 
                 if (itemsCount == 0)
                 {
-                    if (canDrain.Task.IsCompleted)
-                        Interlocked.Exchange(ref canDrain, new DrainSignal());
+                    Interlocked.Exchange(ref canDrain, new DrainSignal()).Set();
 
                     if (itemsCount > 0)
                         canDrain.Set();

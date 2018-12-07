@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
@@ -172,6 +173,7 @@ namespace Vostok.Commons.Collections
             return reallocated;
         }
 
+        [DebuggerDisplay("[{Key}, {Value}]")]
         private class Pair
         {
             public Pair(TKey key, TValue value, int hash)

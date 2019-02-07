@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -7,7 +8,7 @@ using JetBrains.Annotations;
 namespace Vostok.Commons.Collections
 {
     [PublicAPI]
-    internal class RecyclingBoundedCache<TKey, TValue>
+    internal class RecyclingBoundedCache<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     {
         private readonly int capacity;
         private readonly IEqualityComparer<TKey> comparer;
@@ -39,6 +40,14 @@ namespace Vostok.Commons.Collections
 
             return value;
         }
+
+        public bool TryGetValye(TKey key, out TValue value)
+            => state.Items.TryGetValue(key, out value);
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+            => state.Items.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         private class RecyclingBoundedCacheState
         {

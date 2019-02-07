@@ -41,7 +41,7 @@ namespace Vostok.Commons.Collections
             return value;
         }
 
-        public bool TryGetValye(TKey key, out TValue value)
+        public bool TryGetValue(TKey key, out TValue value)
             => state.Items.TryGetValue(key, out value);
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

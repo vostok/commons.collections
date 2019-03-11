@@ -15,7 +15,7 @@ namespace Vostok.Commons.Collections
         // (iloktionov): Explicit implementation in ConcurrentDictionary is atomic: http://blogs.msdn.com/b/pfxteam/archive/2011/04/02/10149222.aspx
         public static bool Remove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, KeyValuePair<TKey, TValue> pair)
         {
-            var collection = (ICollection<KeyValuePair<TKey, TValue>>) dictionary;
+            var collection = (ICollection<KeyValuePair<TKey, TValue>>)dictionary;
 
             return collection.Remove(pair);
         }

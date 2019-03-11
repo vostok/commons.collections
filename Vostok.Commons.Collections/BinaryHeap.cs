@@ -16,7 +16,7 @@ namespace Vostok.Commons.Collections
             this.comparer = comparer ?? Comparer<T>.Default;
 
             items = new List<T>(capacity);
-            comparisonPredicate = isMaxHeap ? r => !r : (Func<bool, bool>) (r => r);
+            comparisonPredicate = isMaxHeap ? r => !r : (Func<bool, bool>)(r => r);
         }
 
         public int Count => items.Count;

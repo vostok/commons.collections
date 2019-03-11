@@ -6,6 +6,8 @@ using FluentAssertions;
 using FluentAssertions.Extensions;
 using NUnit.Framework;
 
+// ReSharper disable MethodSupportsCancellation
+
 namespace Vostok.Commons.Collections.Tests
 {
     [TestFixture]
@@ -19,10 +21,11 @@ namespace Vostok.Commons.Collections.Tests
         [TestCase(1, 4)]
         public void All_successfully_added_items_should_be_eventually_consumed(int capacity, int writersCount)
         {
-            var stop = false;
             var addedItemsCount = 0;
             var drainedItemsCount = 0;
             var queue = new ConcurrentBoundedQueue<object>(capacity);
+            var cancellation = new CancellationTokenSource();
+            var cancellationToken = cancellation.Token;
 
             var trigger = new CountdownEvent(writersCount + 1);
             var writers = Enumerable.Range(0, writersCount).Select(_ => Task.Run(
@@ -30,7 +33,8 @@ namespace Vostok.Commons.Collections.Tests
                 {
                     trigger.Signal();
                     trigger.Wait();
-                    while (!stop)
+
+                    while (!cancellationToken.IsCancellationRequested)
                     {
                         var item = new object();
                         if (queue.TryAdd(item))
@@ -44,7 +48,7 @@ namespace Vostok.Commons.Collections.Tests
                     trigger.Signal();
                     trigger.Wait();
                     var buffer = new object[10];
-                    while (!stop || writers.Any(w => !w.IsCompleted) || queue.Count > 0)
+                    while (!cancellation.IsCancellationRequested || writers.Any(w => !w.IsCompleted) || queue.Count > 0)
                     {
                         if (!await queue.TryWaitForNewItemsAsync(100.Milliseconds()).ConfigureAwait(false))
                         {
@@ -58,8 +62,10 @@ namespace Vostok.Commons.Collections.Tests
 
             Thread.Sleep(10.Seconds());
 
-            stop = true;
+            cancellation.Cancel();
+
             Task.WaitAll(writers);
+
             reader.Wait();
 
             Console.WriteLine($"added: {addedItemsCount}, drained: {drainedItemsCount}");

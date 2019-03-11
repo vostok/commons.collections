@@ -74,6 +74,8 @@ namespace Vostok.Commons.Collections
         /// <summary>
         /// Returns a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the same data plus <paramref name="key"/> set to <paramref name="value"/>.
         /// </summary>
+        /// <param name="key">The key to set value for.</param>
+        /// <param name="value">The value to write.</param>
         /// <param name="overwrite">Specifies the behavior in case a value with the same key exists. If <c>true</c>, the value will be overwritten in the returned dictionary. Otherwise, the new value is ignored and the original dictionary is returned.</param>
         public ImmutableArrayDictionary<TKey, TValue> Set(TKey key, TValue value, bool overwrite = true)
         {

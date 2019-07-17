@@ -18,7 +18,7 @@ namespace Vostok.Commons.Collections
         private readonly Bucket[] buckets;
 
         public BufferPool(
-            int maxArraySize = DefaultMaximumArraySize, 
+            int maxArraySize = DefaultMaximumArraySize,
             int maxArraysPerBucket = DefaultMaximumArraysPerBucket)
         {
             if (maxArraySize < MinimumArrayLength)
@@ -60,8 +60,7 @@ namespace Vostok.Commons.Collections
                     var buffer = buckets[localIndex].Rent();
                     if (buffer != null)
                         return buffer;
-                }
-                while (++localIndex < buckets.Length && localIndex != index + MaximumBucketsToTry);
+                } while (++localIndex < buckets.Length && localIndex != index + MaximumBucketsToTry);
 
                 return new byte[buckets[index].BufferSize];
             }

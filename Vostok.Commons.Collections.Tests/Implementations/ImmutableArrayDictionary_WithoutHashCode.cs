@@ -10,7 +10,7 @@ namespace Vostok.Commons.Collections.Tests.Implementations
 
         public static readonly ImmutableArrayDictionary<TKey, TValue> Empty = new ImmutableArrayDictionary<TKey, TValue>(0);
 
-        private readonly Pair[] pairs; 
+        private readonly Pair[] pairs;
 
         private readonly IEqualityComparer<TKey> keyComparer;
 
@@ -68,7 +68,7 @@ namespace Vostok.Commons.Collections.Tests.Implementations
 
             return new ImmutableArrayDictionary_WithoutHashCode<TKey, TValue>(pairs, Count + 1, keyComparer);
         }
-        
+
         public bool TryGetValue(TKey key, out TValue value) =>
             Find(key, out value, out _);
 

@@ -28,19 +28,22 @@ namespace Vostok.Commons.Collections.Tests
             var cancellationToken = cancellation.Token;
 
             var trigger = new CountdownEvent(writersCount + 1);
-            var writers = Enumerable.Range(0, writersCount).Select(_ => Task.Run(
-                () =>
-                {
-                    trigger.Signal();
-                    trigger.Wait();
+            var writers = Enumerable.Range(0, writersCount)
+                .Select(
+                    _ => Task.Run(
+                        () =>
+                        {
+                            trigger.Signal();
+                            trigger.Wait();
 
-                    while (!cancellationToken.IsCancellationRequested)
-                    {
-                        var item = new object();
-                        if (queue.TryAdd(item))
-                            Interlocked.Increment(ref addedItemsCount);
-                    }
-                })).ToArray();
+                            while (!cancellationToken.IsCancellationRequested)
+                            {
+                                var item = new object();
+                                if (queue.TryAdd(item))
+                                    Interlocked.Increment(ref addedItemsCount);
+                            }
+                        }))
+                .ToArray();
 
             var reader = Task.Run(
                 async () =>
@@ -55,6 +58,7 @@ namespace Vostok.Commons.Collections.Tests
                             if (writers.Any(w => !w.IsCompleted))
                                 throw new Exception("Wait seems to be stuck.");
                         }
+
                         var count = queue.Drain(buffer, 0, buffer.Length);
                         drainedItemsCount += count;
                     }

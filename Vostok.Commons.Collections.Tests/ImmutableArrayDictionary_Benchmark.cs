@@ -44,8 +44,11 @@ namespace Vostok.Commons.Collections.Tests
             }
         }
 
-        [Benchmark] public void WithoutHash() => withoutHash.TryGetValue(key, out _);
-        [Benchmark] public void WithHash() => withHash.TryGetValue(key, out _);
+        [Benchmark]
+        public void WithoutHash() => withoutHash.TryGetValue(key, out _);
+
+        [Benchmark]
+        public void WithHash() => withHash.TryGetValue(key, out _);
     }
 
     public class HashCodeBenchmark_WorstCase : HashCodeBenchmark

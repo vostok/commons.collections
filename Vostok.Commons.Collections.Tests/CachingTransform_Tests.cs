@@ -27,11 +27,14 @@ namespace Vostok.Commons.Collections.Tests
 
             processorCalls = 0;
 
-            transform = new CachingTransform<string, string>(i =>
-            {
-                processorCalls++;
-                return i.ToUpper();
-            }, () => providedValue, preventParallelProcessing: preventParallelProcessing);
+            transform = new CachingTransform<string, string>(
+                i =>
+                {
+                    processorCalls++;
+                    return i.ToUpper();
+                },
+                () => providedValue,
+                preventParallelProcessing: preventParallelProcessing);
         }
 
         [Test]

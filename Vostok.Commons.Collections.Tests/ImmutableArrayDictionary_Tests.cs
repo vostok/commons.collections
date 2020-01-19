@@ -321,5 +321,18 @@ namespace Vostok.Commons.Collections.Tests
 
             dictionary["name"].Should().Be("value2");
         }
+
+        [Test]
+        public void Copy_constructor_should_copy_all_pairs_from_source()
+        {
+            var source = new Dict(16)
+                .Set("a", "b")
+                .Set("c", "d")
+                .Set("e", "f");
+
+            var copy = new Dict(source);
+
+            copy.Should().Equal(source);
+        }
     }
 }

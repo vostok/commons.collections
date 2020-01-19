@@ -44,6 +44,18 @@ namespace Vostok.Commons.Collections
                 throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be non-negative");
         }
 
+        /// <summary>
+        /// Create a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with pairs from given <paramref name="source"/>.
+        /// </summary>
+        public ImmutableArrayDictionary(IReadOnlyDictionary<TKey, TValue> source, [CanBeNull] IEqualityComparer<TKey> keyComparer = null)
+            : this(new Pair[source.Count], source.Count, keyComparer)
+        {
+            var index = 0;
+
+            foreach (var pair in source)
+                pairs[index++] = new Pair(pair.Key, pair.Value, this.keyComparer.GetHashCode(pair.Key));
+        }
+
         private ImmutableArrayDictionary(Pair[] pairs, int count, IEqualityComparer<TKey> keyComparer)
         {
             this.pairs = pairs;

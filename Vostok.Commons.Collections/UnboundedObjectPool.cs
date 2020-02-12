@@ -28,6 +28,7 @@ namespace Vostok.Commons.Collections
         {
             private readonly T item;
             private readonly UnboundedObjectPool<T> pool;
+            private volatile bool released;
 
             public Releaser(T item, UnboundedObjectPool<T> pool)
             {
@@ -37,7 +38,11 @@ namespace Vostok.Commons.Collections
 
             public void Dispose()
             {
-                pool.Return(item);
+                if (!released)
+                {
+                    released = true;
+                    pool.Return(item);
+                }
             }
         }
     }

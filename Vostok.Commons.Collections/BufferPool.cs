@@ -128,8 +128,8 @@ namespace Vostok.Commons.Collections
 
         private class RentToken : IDisposable
         {
-            private readonly BufferPool pool;
             private readonly byte[] buffer;
+            private volatile BufferPool pool;
 
             public RentToken(BufferPool pool, byte[] buffer)
             {
@@ -138,7 +138,7 @@ namespace Vostok.Commons.Collections
             }
 
             public void Dispose()
-                => pool.Return(buffer);
+                => Interlocked.Exchange(ref pool, null)?.Return(buffer);
         }
 
         private class Bucket

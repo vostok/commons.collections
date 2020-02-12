@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using JetBrains.Annotations;
 
 namespace Vostok.Commons.Collections
@@ -27,8 +28,7 @@ namespace Vostok.Commons.Collections
         private class Releaser : IDisposable
         {
             private readonly T item;
-            private readonly UnboundedObjectPool<T> pool;
-            private volatile bool released;
+            private volatile UnboundedObjectPool<T> pool;
 
             public Releaser(T item, UnboundedObjectPool<T> pool)
             {
@@ -38,11 +38,7 @@ namespace Vostok.Commons.Collections
 
             public void Dispose()
             {
-                if (!released)
-                {
-                    released = true;
-                    pool.Return(item);
-                }
+                Interlocked.Exchange(ref pool, null)?.Return(item);
             }
         }
     }

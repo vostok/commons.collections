@@ -1,3 +1,7 @@
+## 0.1.3 (29-02-2020):
+
+Added BufferPool.Default shared instance.
+
 ## 0.1.2 (26-02-2020):
 
 Cumulative release.

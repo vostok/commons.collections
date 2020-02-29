@@ -17,6 +17,8 @@ namespace Vostok.Commons.Collections
 
         private readonly Bucket[] buckets;
 
+        public static BufferPool Default = new BufferPool();
+
         public BufferPool(
             int maxArraySize = DefaultMaximumArraySize,
             int maxArraysPerBucket = DefaultMaximumArraysPerBucket)

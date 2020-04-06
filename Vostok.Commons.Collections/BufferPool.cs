@@ -15,9 +15,11 @@ namespace Vostok.Commons.Collections
         private const int MaximumArrayLength = 0x40000000;
         private const int MaximumBucketsToTry = 2;
 
-        private readonly Bucket[] buckets;
-
         public static BufferPool Default = new BufferPool();
+
+        private static long rented;
+
+        private readonly Bucket[] buckets;
 
         public BufferPool(
             int maxArraySize = DefaultMaximumArraySize,
@@ -37,37 +39,20 @@ namespace Vostok.Commons.Collections
             }
         }
 
+        public static long Rented => Interlocked.Read(ref rented);
+
         [NotNull]
         public IDisposable Rent(int minimumSize, out byte[] buffer)
         {
             buffer = Rent(minimumSize);
-
             return new RentToken(this, buffer);
         }
 
         public byte[] Rent(int minimumSize)
         {
-            if (minimumSize < 0)
-                throw new ArgumentOutOfRangeException(nameof(minimumSize));
-
-            if (minimumSize == 0)
-                return Array.Empty<byte>();
-
-            var index = SelectBucketIndex(minimumSize);
-            if (index < buckets.Length)
-            {
-                var localIndex = index;
-                do
-                {
-                    var buffer = buckets[localIndex].Rent();
-                    if (buffer != null)
-                        return buffer;
-                } while (++localIndex < buckets.Length && localIndex != index + MaximumBucketsToTry);
-
-                return new byte[buckets[index].BufferSize];
-            }
-
-            return new byte[minimumSize];
+            var buffer = RentInternal(minimumSize);
+            Interlocked.Add(ref rented, buffer.Length);
+            return buffer;
         }
 
         public void Return(byte[] buffer, bool clear = false)
@@ -82,6 +67,7 @@ namespace Vostok.Commons.Collections
                     Array.Clear(buffer, 0, buffer.Length);
 
                 buckets[bucket].Return(buffer);
+                Interlocked.Add(ref rented, -buffer.Length);
             }
         }
 
@@ -127,6 +113,31 @@ namespace Vostok.Commons.Collections
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int GetMaxSizeForBucket(int binIndex)
             => 16 << binIndex;
+
+        private byte[] RentInternal(int minimumSize)
+        {
+            if (minimumSize < 0)
+                throw new ArgumentOutOfRangeException(nameof(minimumSize));
+
+            if (minimumSize == 0)
+                return Array.Empty<byte>();
+
+            var index = SelectBucketIndex(minimumSize);
+            if (index < buckets.Length)
+            {
+                var localIndex = index;
+                do
+                {
+                    var buffer = buckets[localIndex].Rent();
+                    if (buffer != null)
+                        return buffer;
+                } while (++localIndex < buckets.Length && localIndex != index + MaximumBucketsToTry);
+
+                return new byte[buckets[index].BufferSize];
+            }
+
+            return new byte[minimumSize];
+        }
 
         private class RentToken : IDisposable
         {

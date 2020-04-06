@@ -42,6 +42,23 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
+        public void Should_calculate_rented()
+        {
+            var initial = BufferPool.Rented;
+            
+            for (var i = 0; i < 10; i++)
+            {
+                var buffer = pool.Rent(123);
+
+                BufferPool.Rented.Should().Be(initial + buffer.Length);
+
+                pool.Return(buffer);
+
+                BufferPool.Rented.Should().Be(initial);
+            }
+        }
+
+        [Test]
         public void Should_allocate_new_buffers_as_needed()
         {
             var buffer1 = pool.Rent(123);

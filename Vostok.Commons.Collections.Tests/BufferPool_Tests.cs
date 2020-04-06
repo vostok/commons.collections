@@ -45,7 +45,7 @@ namespace Vostok.Commons.Collections.Tests
         public void Should_calculate_rented()
         {
             var initial = BufferPool.Rented;
-            
+
             for (var i = 0; i < 10; i++)
             {
                 var buffer = pool.Rent(123);

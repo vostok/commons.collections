@@ -155,10 +155,15 @@ namespace Vostok.Commons.Collections
         {
             private int signalGate;
 
+            public DrainSignal()
+                : base(TaskCreationOptions.RunContinuationsAsynchronously)
+            {
+            }
+
             public void Set()
             {
                 if (!Task.IsCompleted && Interlocked.Exchange(ref signalGate, 1) == 0)
-                    System.Threading.Tasks.Task.Run(() => TrySetResult(true));
+                    TrySetResult(true);
             }
         }
     }

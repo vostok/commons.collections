@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
 namespace Vostok.Commons.Collections
@@ -91,34 +91,39 @@ namespace Vostok.Commons.Collections
         /// <param name="overwrite">Specifies the behavior in case a value with the same key exists. If <c>true</c>, the value will be overwritten in the returned dictionary. Otherwise, the new value is ignored and the original dictionary is returned.</param>
         public ImmutableArrayDictionary<TKey, TValue> Set(TKey key, TValue value, bool overwrite = true)
         {
-            Pair[] newProperties;
+            Pair[] newPairs;
 
             var hash = ComputeHash(key);
 
-            var newProperty = new Pair(key, value, hash);
+            var newPair = new Pair(key, value, hash);
 
             if (Find(key, hash, out var oldValue, out var oldIndex))
             {
                 if (!overwrite || Equals(value, oldValue))
                     return this;
 
-                newProperties = ReallocateArray(pairs.Length);
-                newProperties[oldIndex] = newProperty;
-                return new ImmutableArrayDictionary<TKey, TValue>(newProperties, Count, keyComparer);
+                newPairs = ReallocateArray(pairs.Length);
+                newPairs[oldIndex] = newPair;
+                return new ImmutableArrayDictionary<TKey, TValue>(newPairs, Count, keyComparer);
             }
 
             if (pairs.Length == Count)
             {
-                newProperties = ReallocateArray(Math.Max(DefaultCapacity, pairs.Length * 2));
-                newProperties[Count] = newProperty;
-                return new ImmutableArrayDictionary<TKey, TValue>(newProperties, Count + 1, keyComparer);
+                newPairs = ReallocateArray(Math.Max(DefaultCapacity, pairs.Length * 2));
+                newPairs[Count] = newPair;
+                return new ImmutableArrayDictionary<TKey, TValue>(newPairs, Count + 1, keyComparer);
             }
 
-            if (Interlocked.CompareExchange(ref pairs[Count], newProperty, null) != null)
+            lock (pairs)
             {
-                newProperties = ReallocateArray(pairs.Length);
-                newProperties[Count] = newProperty;
-                return new ImmutableArrayDictionary<TKey, TValue>(newProperties, Count + 1, keyComparer);
+                if (pairs[Count].IsOccupied)
+                {
+                    newPairs = ReallocateArray(pairs.Length);
+                    newPairs[Count] = newPair;
+                    return new ImmutableArrayDictionary<TKey, TValue>(newPairs, Count + 1, keyComparer);
+                }
+
+                pairs[Count] = newPair;
             }
 
             return new ImmutableArrayDictionary<TKey, TValue>(pairs, Count + 1, keyComparer);
@@ -131,12 +136,12 @@ namespace Vostok.Commons.Collections
         {
             if (Find(key, out _, out var oldIndex))
             {
-                var newProperties = new Pair[pairs.Length];
+                var newPairs = new Pair[pairs.Length];
 
-                Array.Copy(pairs, 0, newProperties, 0, oldIndex);
-                Array.Copy(pairs, oldIndex + 1, newProperties, oldIndex, pairs.Length - oldIndex - 1);
+                Array.Copy(pairs, 0, newPairs, 0, oldIndex);
+                Array.Copy(pairs, oldIndex + 1, newPairs, oldIndex, Count - oldIndex - 1);
 
-                return new ImmutableArrayDictionary<TKey, TValue>(newProperties, Count - 1, keyComparer);
+                return new ImmutableArrayDictionary<TKey, TValue>(newPairs, Count - 1, keyComparer);
             }
 
             return this;
@@ -160,6 +165,7 @@ namespace Vostok.Commons.Collections
         private bool Find(TKey key, out TValue value, out int index)
             => Find(key, ComputeHash(key), out value, out index);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool Find(TKey key, int hash, out TValue value, out int index)
         {
             for (var i = 0; i < Count; i++)
@@ -188,18 +194,20 @@ namespace Vostok.Commons.Collections
         }
 
         [DebuggerDisplay("[{Key}, {Value}]")]
-        private class Pair
+        private struct Pair
         {
             public Pair(TKey key, TValue value, int hash)
             {
                 Key = key;
                 Value = value;
                 Hash = hash;
+                IsOccupied = true;
             }
 
-            public TKey Key { get; }
-            public TValue Value { get; }
-            public int Hash { get; }
+            public readonly TKey Key;
+            public readonly TValue Value;
+            public readonly int Hash;
+            public volatile bool IsOccupied;
 
             public KeyValuePair<TKey, TValue> ToKeyValuePair() =>
                 new KeyValuePair<TKey, TValue>(Key, Value);

@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System.Collections.Generic;
+using System.Linq;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace Vostok.Commons.Collections.Tests
@@ -56,6 +58,39 @@ namespace Vostok.Commons.Collections.Tests
 
                 BufferPool.Rented.Should().Be(initial);
             }
+        }
+
+        [Test]
+        public void Rented_should_not_decrease_on_big_buffers_return()
+        {
+            var initial = BufferPool.Rented;
+
+            var buffer = pool.Rent(10 * 1024 * 1024);
+
+            BufferPool.Rented.Should().Be(initial + buffer.Length);
+
+            pool.Return(buffer);
+
+            BufferPool.Rented.Should().Be(initial + buffer.Length);
+        }
+
+        [Test]
+        public void Rented_should_not_decrease_on_extra_buffers_return()
+        {
+            var initial = BufferPool.Rented;
+
+            BufferPool.Rented.Should().Be(initial);
+
+            var buffers = new List<byte[]>();
+            for (int i = 0; i < 100; i++)
+                buffers.Add(pool.Rent(1024 * 1024));
+
+            BufferPool.Rented.Should().Be(initial + buffers.Sum(b => b.Length));
+
+            foreach (var buffer in buffers)
+                pool.Return(buffer);
+
+            BufferPool.Rented.Should().BeInRange(initial + 1, initial + buffers.Sum(b => b.Length) - 1);
         }
 
         [Test]

@@ -66,8 +66,8 @@ namespace Vostok.Commons.Collections
                 if (clear)
                     Array.Clear(buffer, 0, buffer.Length);
 
-                buckets[bucket].Return(buffer);
-                Interlocked.Add(ref rented, -buffer.Length);
+                if (buckets[bucket].Return(buffer))
+                    Interlocked.Add(ref rented, -buffer.Length);
             }
         }
 
@@ -201,7 +201,7 @@ namespace Vostok.Commons.Collections
                 return buffer;
             }
 
-            public void Return(byte[] array)
+            public bool Return(byte[] array)
             {
                 if (array.Length != BufferSize)
                     throw new ArgumentException($"Attempt to return buffer of size {array.Length} to a bucket with size {BufferSize}.");
@@ -213,13 +213,18 @@ namespace Vostok.Commons.Collections
                     sync.Enter(ref lockTaken);
 
                     if (index != 0)
+                    {
                         buffers[--index] = array;
+                        return true;
+                    }
                 }
                 finally
                 {
                     if (lockTaken)
                         sync.Exit(false);
                 }
+
+                return false;
             }
         }
     }

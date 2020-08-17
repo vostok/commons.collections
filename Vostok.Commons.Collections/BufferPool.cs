@@ -8,6 +8,9 @@ namespace Vostok.Commons.Collections
     [PublicAPI]
     internal class BufferPool
     {
+        public int MaxArraySize { get; }
+        public int MaxArraysPerBucket { get; }
+        
         private const int DefaultMaximumArraySize = 1024 * 1024;
         private const int DefaultMaximumArraysPerBucket = 20;
 
@@ -31,6 +34,9 @@ namespace Vostok.Commons.Collections
             if (maxArraySize > MaximumArrayLength)
                 maxArraySize = MaximumArrayLength;
 
+            MaxArraySize = maxArraySize;
+            MaxArraysPerBucket = maxArraysPerBucket;
+            
             buckets = new Bucket[SelectBucketIndex(maxArraySize) + 1];
 
             for (var i = 0; i < buckets.Length; i++)

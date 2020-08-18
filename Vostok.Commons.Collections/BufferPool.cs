@@ -53,12 +53,26 @@ namespace Vostok.Commons.Collections
             buffer = Rent(minimumSize);
             return new RentToken(this, buffer);
         }
+        [NotNull]
+        public IDisposable RentWithInfo(int minimumSize, out byte[] buffer, out bool fromBucket)
+        {
+            buffer = RentWithInfo(minimumSize, out fromBucket);
+            return new RentToken(this, buffer);
+        }
 
         public byte[] Rent(int minimumSize)
         {
-            var buffer = RentInternal(minimumSize);
+            var buffer = RentInternal(minimumSize).instance;
             Interlocked.Add(ref rented, buffer.Length);
             return buffer;
+        }
+
+        public byte[] RentWithInfo(int minimumSize, out bool fromBucket)
+        {
+            var buffer = RentInternal(minimumSize);
+            fromBucket = buffer.fromBucket;
+            Interlocked.Add(ref rented, buffer.instance.Length);
+            return buffer.instance;
         }
 
         public void Return(byte[] buffer, bool clear = false)
@@ -120,13 +134,13 @@ namespace Vostok.Commons.Collections
         private static int GetMaxSizeForBucket(int binIndex)
             => 16 << binIndex;
 
-        private byte[] RentInternal(int minimumSize)
+        private (byte[] instance, bool fromBucket) RentInternal(int minimumSize)
         {
             if (minimumSize < 0)
                 throw new ArgumentOutOfRangeException(nameof(minimumSize));
 
             if (minimumSize == 0)
-                return Array.Empty<byte>();
+                return (Array.Empty<byte>(), true);
 
             var index = SelectBucketIndex(minimumSize);
             if (index < buckets.Length)
@@ -136,13 +150,13 @@ namespace Vostok.Commons.Collections
                 {
                     var buffer = buckets[localIndex].Rent();
                     if (buffer != null)
-                        return buffer;
+                        return (buffer, true);
                 } while (++localIndex < buckets.Length && localIndex != index + MaximumBucketsToTry);
 
-                return new byte[buckets[index].BufferSize];
+                return (new byte[buckets[index].BufferSize], false);
             }
 
-            return new byte[minimumSize];
+            return (new byte[minimumSize], false);
         }
 
         private class RentToken : IDisposable

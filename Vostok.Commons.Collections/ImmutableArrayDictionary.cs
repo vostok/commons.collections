@@ -196,6 +196,11 @@ namespace Vostok.Commons.Collections
         [DebuggerDisplay("[{Key}, {Value}]")]
         private struct Pair
         {
+            public readonly TKey Key;
+            public readonly TValue Value;
+            public readonly int Hash;
+            public volatile bool IsOccupied;
+
             public Pair(TKey key, TValue value, int hash)
             {
                 Key = key;
@@ -203,11 +208,6 @@ namespace Vostok.Commons.Collections
                 Hash = hash;
                 IsOccupied = true;
             }
-
-            public readonly TKey Key;
-            public readonly TValue Value;
-            public readonly int Hash;
-            public volatile bool IsOccupied;
 
             public KeyValuePair<TKey, TValue> ToKeyValuePair() =>
                 new KeyValuePair<TKey, TValue>(Key, Value);

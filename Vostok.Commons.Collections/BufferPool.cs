@@ -22,7 +22,6 @@ namespace Vostok.Commons.Collections
         private readonly Bucket[] buckets;
         private long rentedFromInstance;
 
-
         public BufferPool(
             int maxArraySize = DefaultMaximumArraySize,
             int maxArraysPerBucket = DefaultMaximumArraysPerBucket)
@@ -48,14 +47,14 @@ namespace Vostok.Commons.Collections
         public IDisposable Rent(int minimumSize, out byte[] buffer)
         {
             buffer = Rent(minimumSize);
-            return new RentToken(this, buffer);
+            return new RentToken(this, buffer, true);
         }
 
         [NotNull]
-        public IDisposable RentWithInfo(int minimumSize, out byte[] buffer, out bool fromBucket)
+        public IDisposable RentWithInfo(int minimumSize, out byte[] buffer, out bool bufferIsPooled)
         {
-            buffer = RentWithInfo(minimumSize, out fromBucket);
-            return new RentToken(this, buffer);
+            buffer = RentWithInfo(minimumSize, out bufferIsPooled);
+            return new RentToken(this, buffer, bufferIsPooled);
         }
 
         public byte[] Rent(int minimumSize)
@@ -65,11 +64,12 @@ namespace Vostok.Commons.Collections
             return buffer;
         }
 
-        public byte[] RentWithInfo(int minimumSize, out bool fromBucket)
+        public byte[] RentWithInfo(int minimumSize, out bool bufferIsPooled)
         {
             var buffer = RentInternal(minimumSize);
-            fromBucket = buffer.fromBucket;
-            UpdateRented(buffer.instance.Length);
+            bufferIsPooled = buffer.bufferIsPooled;
+            if (bufferIsPooled)
+                UpdateRented(buffer.instance.Length);
             return buffer.instance;
         }
 
@@ -138,13 +138,13 @@ namespace Vostok.Commons.Collections
             Interlocked.Add(ref rentedFromInstance, len);
         }
 
-        private (byte[] instance, bool fromBucket) RentInternal(int minimumSize)
+        private (byte[] instance, bool bufferIsPooled) RentInternal(int minimumSize)
         {
             if (minimumSize < 0)
                 throw new ArgumentOutOfRangeException(nameof(minimumSize));
 
             if (minimumSize == 0)
-                return (Array.Empty<byte>(), true);
+                return (Array.Empty<byte>(), false);
 
             var index = SelectBucketIndex(minimumSize);
             if (index < buckets.Length)
@@ -166,16 +166,21 @@ namespace Vostok.Commons.Collections
         private class RentToken : IDisposable
         {
             private readonly byte[] buffer;
+            private readonly bool bufferIsPooled;
             private volatile BufferPool pool;
 
-            public RentToken(BufferPool pool, byte[] buffer)
+            public RentToken(BufferPool pool, byte[] buffer, bool bufferIsPooled)
             {
                 this.pool = pool;
                 this.buffer = buffer;
+                this.bufferIsPooled = bufferIsPooled;
             }
 
             public void Dispose()
-                => Interlocked.Exchange(ref pool, null)?.Return(buffer);
+            {
+                if (bufferIsPooled)
+                    Interlocked.Exchange(ref pool, null)?.Return(buffer);
+            }
         }
 
         private class Bucket

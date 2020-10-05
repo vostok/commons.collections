@@ -41,6 +41,17 @@ namespace Vostok.Commons.Collections
             return value;
         }
 
+        public bool TryRemove(TKey key)
+        {
+            var currentState = state;
+
+            if (!currentState.Items.TryRemove(key, out _))
+                return false;
+
+            Interlocked.Decrement(ref currentState.Count);
+            return true;
+        }
+
         public bool TryGetValue(TKey key, out TValue value)
             => state.Items.TryGetValue(key, out value);
 

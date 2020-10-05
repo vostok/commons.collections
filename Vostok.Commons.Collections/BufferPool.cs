@@ -22,8 +22,6 @@ namespace Vostok.Commons.Collections
         private readonly Bucket[] buckets;
         private long rentedFromInstance;
 
-        private int maxArraySize;
-        private int maxArraysPerBucket;
 
         public BufferPool(
             int maxArraySize = DefaultMaximumArraySize,
@@ -34,9 +32,6 @@ namespace Vostok.Commons.Collections
 
             if (maxArraySize > MaximumArrayLength)
                 maxArraySize = MaximumArrayLength;
-
-            this.maxArraySize = maxArraySize;
-            this.maxArraysPerBucket = maxArraysPerBucket;
 
             buckets = new Bucket[SelectBucketIndex(maxArraySize) + 1];
 

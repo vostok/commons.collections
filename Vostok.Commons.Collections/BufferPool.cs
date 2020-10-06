@@ -21,6 +21,8 @@ namespace Vostok.Commons.Collections
 
         private readonly Bucket[] buckets;
 
+        private long wasted;
+
         public BufferPool(
             int maxArraySize = DefaultMaximumArraySize,
             int maxArraysPerBucket = DefaultMaximumArraysPerBucket)
@@ -40,6 +42,8 @@ namespace Vostok.Commons.Collections
         }
 
         public static long Rented => Interlocked.Read(ref rented);
+
+        public long Wasted => Interlocked.Read(ref wasted);
 
         [NotNull]
         public IDisposable Rent(int minimumSize, out byte[] buffer)
@@ -67,8 +71,13 @@ namespace Vostok.Commons.Collections
                     Array.Clear(buffer, 0, buffer.Length);
 
                 if (buckets[bucket].Return(buffer))
+                {
                     Interlocked.Add(ref rented, -buffer.Length);
+                    return;
+                }
             }
+
+            Interlocked.Add(ref wasted, buffer.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

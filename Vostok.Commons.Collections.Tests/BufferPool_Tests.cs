@@ -8,7 +8,13 @@ namespace Vostok.Commons.Collections.Tests
     [TestFixture]
     internal class BufferPool_Tests
     {
-        private readonly BufferPool pool = new BufferPool(maxArraysPerBucket: 5);
+        private BufferPool pool;
+
+        [SetUp]
+        public void TestSetup()
+        {
+            pool = new BufferPool(maxArraysPerBucket: 5);
+        }
 
         [TestCase(0)]
         [TestCase(1)]
@@ -28,6 +34,8 @@ namespace Vostok.Commons.Collections.Tests
             {
                 buffer.Length.Should().BeGreaterOrEqualTo(size);
             }
+
+            pool.Wasted.Should().Be(0);
         }
 
         [Test]
@@ -41,6 +49,8 @@ namespace Vostok.Commons.Collections.Tests
 
                 pool.Rent(123).Should().BeSameAs(buffer);
             }
+
+            pool.Wasted.Should().Be(0);
         }
 
         [Test]
@@ -82,7 +92,7 @@ namespace Vostok.Commons.Collections.Tests
             BufferPool.Rented.Should().Be(initial);
 
             var buffers = new List<byte[]>();
-            for (int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
                 buffers.Add(pool.Rent(1024 * 1024));
 
             BufferPool.Rented.Should().Be(initial + buffers.Sum(b => b.Length));
@@ -110,6 +120,18 @@ namespace Vostok.Commons.Collections.Tests
         {
             for (var i = 0; i < 50; i++)
                 pool.Rent(123).Length.Should().BeGreaterOrEqualTo(123);
+        }
+
+        [Test]
+        public void Should_track_wasted_buffers()
+        {
+            pool = new BufferPool(256);
+
+            using (pool.Rent(1024, out _))
+            {
+            }
+
+            pool.Wasted.Should().BeGreaterOrEqualTo(1024);
         }
     }
 }

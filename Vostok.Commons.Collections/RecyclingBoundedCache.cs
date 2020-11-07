@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace Vostok.Commons.Collections
@@ -32,6 +33,22 @@ namespace Vostok.Commons.Collections
                 return value;
 
             if (currentState.Items.TryAdd(key, value = factory(key)))
+            {
+                var newCount = Interlocked.Increment(ref currentState.Count);
+                if (newCount > capacity)
+                    Interlocked.Exchange(ref state, new RecyclingBoundedCacheState(comparer));
+            }
+
+            return value;
+        }
+
+        public async Task<TValue> ObtainAsync(TKey key, Func<TKey, Task<TValue>> factory)
+        {
+            var currentState = state;
+            if (currentState.Items.TryGetValue(key, out var value))
+                return value;
+
+            if (currentState.Items.TryAdd(key, value = await factory(key)))
             {
                 var newCount = Interlocked.Increment(ref currentState.Count);
                 if (newCount > capacity)

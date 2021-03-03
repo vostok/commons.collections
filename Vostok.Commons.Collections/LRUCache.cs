@@ -71,7 +71,7 @@ namespace Vostok.Commons.Collections
                 if (TryGet(key, out var value))
                     return value;
 
-                var node = new LinkedListNode<(TKey key, TValue value)>((key, await valueFactory(key)));
+                var node = new LinkedListNode<(TKey key, TValue value)>((key, await valueFactory(key).ConfigureAwait(false)));
 
                 if (!map.TryAdd(key, node))
                     continue;

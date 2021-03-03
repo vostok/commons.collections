@@ -48,7 +48,7 @@ namespace Vostok.Commons.Collections
             if (currentState.Items.TryGetValue(key, out var value))
                 return value;
 
-            if (currentState.Items.TryAdd(key, value = await factory(key)))
+            if (currentState.Items.TryAdd(key, value = await factory(key).ConfigureAwait(false)))
             {
                 var newCount = Interlocked.Increment(ref currentState.Count);
                 if (newCount > capacity)

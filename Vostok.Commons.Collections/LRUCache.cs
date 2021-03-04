@@ -71,29 +71,39 @@ namespace Vostok.Commons.Collections
                 if (TryGet(key, out var value))
                     return value;
 
-                var node = new LinkedListNode<(TKey key, TValue value)>((key, await valueFactory(key).ConfigureAwait(false)));
+                value = await valueFactory(key).ConfigureAwait(false);
 
-                if (!map.TryAdd(key, node))
+                if (!TryAdd(key, value))
                     continue;
 
-                LinkedListNode<(TKey key, TValue value)> first = null;
+                return value;
+            }
+        }
 
-                lock (queue)
+        public bool TryAdd(TKey key, TValue value)
+        {
+            var node = new LinkedListNode<(TKey key, TValue value)>((key, value));
+
+            if (!map.TryAdd(key, node))
+                return false;
+
+            LinkedListNode<(TKey key, TValue value)> first = null;
+
+            lock (queue)
+            {
+                if (queue.Count >= capacity)
                 {
-                    if (queue.Count >= capacity)
-                    {
-                        first = queue.First;
-                        queue.RemoveFirst();
-                    }
-
-                    queue.AddLast(node);
+                    first = queue.First;
+                    queue.RemoveFirst();
                 }
 
-                if (first != null)
-                    map.TryRemove(first.Value.key, out _);
-
-                return node.Value.value;
+                queue.AddLast(node);
             }
+
+            if (first != null)
+                map.TryRemove(first.Value.key, out _);
+
+            return true;
         }
 
         public void Remove(TKey key)

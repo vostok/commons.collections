@@ -135,7 +135,7 @@ namespace Vostok.Commons.Collections
         /// </summary>
         /// <param name="pairsToAdd">The collection of new key-value pairs to set.</param>
         /// <param name="overwrite">Specifies the behavior in case a value with the same key exists. If <c>true</c>, the value will be overwritten in the returned dictionary. Otherwise, the new value is ignored and the original dictionary is returned.</param>
-        public unsafe ImmutableArrayDictionary<TKey, TValue> SetRange((TKey key, TValue value)[] pairsToAdd, bool overwrite = true)
+        public ImmutableArrayDictionary<TKey, TValue> SetRange((TKey key, TValue value)[] pairsToAdd, bool overwrite = true)
         {
             var length = pairsToAdd.Length;
             if (length >= 1024)
@@ -147,8 +147,8 @@ namespace Vostok.Commons.Collections
 
             var indicesCountToOverride = 0;
             var equalItemsCount = 0;
-            var oldIndices = stackalloc int[length];
-            var hashes = stackalloc int[length];
+            var oldIndices = new int[length];
+            var hashes = new int[length];
 
             for (var i = 0; i < length; i++)
             {
@@ -201,7 +201,7 @@ namespace Vostok.Commons.Collections
                 return new ImmutableArrayDictionary<TKey, TValue>(pairs, newCount, keyComparer);
             }
 
-            int RefillArray(Pair[] placeholder, (TKey key, TValue value)[] newValues, int* indicesOnOldValues, int* hashesOfNewValues, int initialAppendIndex)
+            int RefillArray(Pair[] placeholder, (TKey key, TValue value)[] newValues, int[] indicesOnOldValues, int[] hashesOfNewValues, int initialAppendIndex)
             {
                 var indexToSet = initialAppendIndex;
                 for (var i = 0; i < newValues.Length; i++)

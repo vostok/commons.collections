@@ -28,7 +28,7 @@ namespace Vostok.Commons.Collections.Tests
         private ImmutableArrayDictionary<string, string> dict;
 
 
-        [Params(25, 250)]
+        [Params(4, 25, 250)]
         public int Count;
 
         [Params(true, false)]
@@ -47,12 +47,18 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Benchmark]
-        public IReadOnlyDictionary<string, string> SetRange()
+        public IReadOnlyDictionary<string, string> SetRangeWithArrayCreationImitation()
         {
             var pairsToAddCreatingImitation = new (string key, string value)[pairsToSet.Length];
             for (var i = 0; i < pairsToSet.Length; i++)
                 pairsToAddCreatingImitation[i] = pairsToSet[i];
-            return dict.SetRange(pairsToAddCreatingImitation);
+            return dict.SetRange(pairsToSet);
+        }
+
+        [Benchmark]
+        public IReadOnlyDictionary<string, string> SetRange()
+        {
+            return dict.SetRange(pairsToSet);
         }
 
         [Benchmark]

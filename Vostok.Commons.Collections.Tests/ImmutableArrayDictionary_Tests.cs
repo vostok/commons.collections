@@ -33,9 +33,29 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
-        public void Should_not_modify_empty_instance_when_deriving_from_it()
+        public void Should_be_able_to_AddRange_a_values_to_empty_instance()
+        {
+            var dictionary = Dict.Empty.SetRange(new[] {("k1", "v1"), ("k2", "v2")});
+
+            dictionary.Count.Should().Be(2);
+            dictionary["k1"].Should().Be("v1");
+            dictionary["k2"].Should().Be("v2");
+        }
+
+        [Test]
+        public void Set_Should_not_modify_empty_instance_when_deriving_from_it()
         {
             Dict.Empty.Set("k", "v");
+
+            Dict.Empty.Should().BeEmpty();
+
+            Dict.Empty.Count.Should().Be(0);
+        }
+
+        [Test]
+        public void SetRange_Should_not_modify_empty_instance_when_deriving_from_it()
+        {
+            Dict.Empty.SetRange(new[] { ("k1", "v1"), ("k2", "v2") });
 
             Dict.Empty.Should().BeEmpty();
 
@@ -55,6 +75,29 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
+        public void Should_use_provided_equality_comparer_when_comparing_keys_for_SetRange()
+        {
+            var dictionary = new Dict(1, StringComparer.OrdinalIgnoreCase)
+                .Set("key", "value");
+
+            dictionary.SetRange(new[] { ("KEY", "VALUE2"), ("KeY", "VALUE3")});
+            dictionary.Should().HaveCount(1);
+
+            dictionary.Keys.Should().Equal("key");
+        }
+
+        [Test]
+        public void SetRange_Should_ignore_provided_equality_comparer_when_setting_new_items_with_same_keys()
+        {
+            var dictionary = new Dict(1, StringComparer.OrdinalIgnoreCase)
+                .SetRange(new[] { ("KEY", "VALUE"), ("key", "value") });
+
+            dictionary.Should().HaveCount(2);
+
+            dictionary.Keys.Should().Equal("KEY", "key");
+        }
+
+        [Test]
         public void Set_should_be_able_to_expand_beyond_initial_capacity()
         {
             var dictionary = new Dict(1)
@@ -70,6 +113,17 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
+        public void SetRange_should_be_able_to_expand_beyond_initial_capacity()
+        {
+            var dictionary = new Dict(1)
+                .SetRange(new[] {("k1", "v1"), ("k2", "v2"), ("k3", "v3"), ("k4", "v4"), ("k5", "v5")});
+
+            dictionary.Count.Should().Be(5);
+
+            dictionary.Keys.Should().Equal("k1", "k2", "k3", "k4", "k5");
+        }
+
+        [Test]
         public void Set_should_return_same_instance_when_replacing_a_value_with_same_value()
         {
             var dictionaryBefore = Dict.Empty
@@ -78,6 +132,18 @@ namespace Vostok.Commons.Collections.Tests
                 .Set("k3", "v3");
 
             var dictionaryAfter = dictionaryBefore.Set("k2", "v2");
+
+            dictionaryAfter.Should().BeSameAs(dictionaryBefore);
+        }
+
+        [Test]
+        public void SetRange_should_return_same_instance_when_replacing_a_value_with_same_value()
+        {
+            var dictionaryBefore = Dict.Empty
+                .SetRange(new[] { ("k1", "v1"), ("k2", "v2"), ("k3", "v3")});
+
+            var dictionaryAfter = dictionaryBefore
+                .SetRange(new[] {("k1", "v1"), ("k2", "v2"), ("k3", "v3")});
 
             dictionaryAfter.Should().BeSameAs(dictionaryBefore);
         }
@@ -100,6 +166,24 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
+        public void SetRange_should_replace_existing_value_when_provided_with_a_different_value()
+        {
+            var dictionaryBefore = Dict.Empty
+                .Set("k1", "v1")
+                .Set("k2", "v2")
+                .Set("k3", "v3");
+
+            var dictionaryAfter = dictionaryBefore
+                .SetRange(new[] { ("k1", "vx"), ("k2", "vx") });
+
+            dictionaryAfter.Should().NotBeSameAs(dictionaryBefore);
+            dictionaryAfter.Count.Should().Be(3);
+            dictionaryAfter["k1"].Should().Be("vx");
+            dictionaryAfter["k2"].Should().Be("vx");
+            dictionaryAfter["k3"].Should().Be("v3");
+        }
+
+        [Test]
         public void Set_should_not_overwrite_existing_value_when_it_is_explicitly_prohibited()
         {
             var dictionaryBefore = Dict.Empty
@@ -108,6 +192,20 @@ namespace Vostok.Commons.Collections.Tests
                 .Set("k3", "v3");
 
             var dictionaryAfter = dictionaryBefore.Set("k2", "vx", false);
+
+            dictionaryAfter.Should().BeSameAs(dictionaryBefore);
+        }
+
+        [Test]
+        public void SetRange_should_not_overwrite_existing_value_when_it_is_explicitly_prohibited()
+        {
+            var dictionaryBefore = Dict.Empty
+                .Set("k1", "v1")
+                .Set("k2", "v2")
+                .Set("k3", "v3");
+
+            var dictionaryAfter = dictionaryBefore
+                .SetRange(new[] {("k1", "vx"), ("k2", "vx")}, false);
 
             dictionaryAfter.Should().BeSameAs(dictionaryBefore);
         }
@@ -130,6 +228,24 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
+        public void SetRange_should_not_modify_base_instance_when_deriving_from_it_by_replacing_existing_value()
+        {
+            var dictionaryBefore = Dict.Empty
+                .Set("k1", "v1")
+                .Set("k2", "v2")
+                .Set("k3", "v3");
+
+            var dictionaryAfter = dictionaryBefore
+                .SetRange(new[] {("k1", "vx"), ("k2", "vx")});
+
+            dictionaryAfter.Should().NotBeSameAs(dictionaryBefore);
+            dictionaryBefore.Count.Should().Be(3);
+            dictionaryBefore["k1"].Should().Be("v1");
+            dictionaryBefore["k2"].Should().Be("v2");
+            dictionaryBefore["k3"].Should().Be("v3");
+        }
+
+        [Test]
         public void Set_should_be_able_to_grow_new_instance_when_adding_unique_keys_without_spoiling_base_instance()
         {
             var dictionary = new Dict(0);
@@ -139,6 +255,27 @@ namespace Vostok.Commons.Collections.Tests
                 var newKey = "key-" + i;
                 var newValue = "value-" + i;
                 var newDictionary = dictionary.Set(newKey, newValue);
+
+                newDictionary.Should().NotBeSameAs(dictionary);
+                newDictionary.Count.Should().Be(i + 1);
+                newDictionary[newKey].Should().Be(newValue);
+
+                dictionary.Count.Should().Be(i);
+                dictionary.ContainsKey(newKey).Should().BeFalse();
+                dictionary = newDictionary;
+            }
+        }
+
+        [Test]
+        public void SetRange_should_be_able_to_grow_new_instance_when_adding_unique_keys_without_spoiling_base_instance()
+        {
+            var dictionary = new Dict(0);
+
+            for (var i = 0; i < 100; i++)
+            {
+                var newKey = "key-" + i;
+                var newValue = "value-" + i;
+                var newDictionary = dictionary.SetRange(new []{(newKey, newValue)});
 
                 newDictionary.Should().NotBeSameAs(dictionary);
                 newDictionary.Count.Should().Be(i + 1);
@@ -172,6 +309,33 @@ namespace Vostok.Commons.Collections.Tests
             dictionaryAfter2.Should().NotBeSameAs(dictionaryAfter1);
             dictionaryAfter2.Count.Should().Be(4);
             dictionaryAfter2["k4"].Should().Be("v4-2");
+        }
+
+        [Test]
+        public void SetRange_should_correctly_handle_forking_multiple_instances_from_a_single_base()
+        {
+            var dictionaryBefore = Dict.Empty
+                .Set("k1", "v1")
+                .Set("k2", "v2")
+                .Set("k3", "v3");
+
+            var dictionaryAfter1 = dictionaryBefore.SetRange(new[] {("k4", "v4-1"), ("k5", "v5-1")});
+            var dictionaryAfter2 = dictionaryBefore.SetRange(new[] {("k4", "v4-2"), ("k5", "v5-2")});
+
+            dictionaryBefore.Count.Should().Be(3);
+            dictionaryBefore.ContainsKey("k4").Should().BeFalse();
+            dictionaryBefore.ContainsKey("k5").Should().BeFalse();
+
+            dictionaryAfter1.Should().NotBeSameAs(dictionaryBefore);
+            dictionaryAfter1.Count.Should().Be(5);
+            dictionaryAfter1["k4"].Should().Be("v4-1");
+            dictionaryAfter1["k5"].Should().Be("v5-1");
+
+            dictionaryAfter2.Should().NotBeSameAs(dictionaryBefore);
+            dictionaryAfter2.Should().NotBeSameAs(dictionaryAfter1);
+            dictionaryAfter2.Count.Should().Be(5);
+            dictionaryAfter2["k4"].Should().Be("v4-2");
+            dictionaryAfter2["k5"].Should().Be("v5-2");
         }
 
         [Test]

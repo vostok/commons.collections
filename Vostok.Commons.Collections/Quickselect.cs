@@ -5,11 +5,11 @@ using JetBrains.Annotations;
 namespace Vostok.Commons.Collections
 {
     [PublicAPI]
-    public static class Quickselect
+    internal static class Quickselect
     {
         [ThreadStatic]
         private static Random random;
-        
+
         public static T QuickSelect<T>(this T[] list, int top, IComparer<T> comparer = null, QuickselectSortOrder order = QuickselectSortOrder.Ascending)
         {
             if (top > list.Length)
@@ -20,7 +20,7 @@ namespace Vostok.Commons.Collections
 
             if (top <= 0)
                 return list[0];
-            
+
             if (comparer == null)
                 comparer = Comparer<T>.Default;
 
@@ -82,7 +82,7 @@ namespace Vostok.Commons.Collections
             list[index1] = list[index2];
             list[index2] = temp;
         }
-        
+
         private static int Next(int minValue, int maxValue)
         {
             return ObtainRandom().Next(minValue, maxValue);

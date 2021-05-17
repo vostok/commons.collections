@@ -14,7 +14,7 @@ namespace Vostok.Commons.Collections.Tests
         public void Should_move_top_items_to_the_beginning_of_given_array(QuickselectSortOrder order)
         {
             var random = new Random();
-            
+
             var itemsCount = random.Next(100, 200);
             var items = new int[itemsCount];
             for (var i = 1; i <= itemsCount - 1; i++)
@@ -59,7 +59,7 @@ namespace Vostok.Commons.Collections.Tests
             var items = Enumerable.Range(0, itemsCount).ToArray();
             var comparer = new CountedComparer<int>(Comparer<int>.Default);
             var result = items.QuickSelect(6000, order: QuickselectSortOrder.Descending, comparer: comparer);
-            comparer.Called.Should().BeLessThan(itemsCount * 7);// Avg Performace O(n)
+            comparer.Called.Should().BeLessThan(itemsCount * 7); // Avg Performace O(n)
             AssertQuickSortResult(QuickselectSortOrder.Descending, items, 6000, result);
         }
 
@@ -68,12 +68,12 @@ namespace Vostok.Commons.Collections.Tests
         public void Should_select_fast_on_similarData(QuickselectSortOrder order)
         {
             var itemsCount = 800;
-            var items = new[] { "c", "a", "b", "zf", "e", "f", "w", "we", "z", "gg" }
+            var items = new[] {"c", "a", "b", "zf", "e", "f", "w", "we", "z", "gg"}
                 .SelectMany(prefix => Enumerable.Repeat(prefix + new string('c', 10), itemsCount))
                 .ToArray();
             var comparer = new CountedComparer<string>(Comparer<string>.Default);
             var result = items.QuickSelect(6000, order: order, comparer: comparer);
-            comparer.Called.Should().BeLessThan(items.Length * 7);// Avg Performace O(n)
+            comparer.Called.Should().BeLessThan(items.Length * 7); // Avg Performace O(n)
             AssertQuickSortResult(order, items, 6000, result);
         }
 
@@ -97,7 +97,7 @@ namespace Vostok.Commons.Collections.Tests
                 {
                     cmp.Compare(item, maximum).Should().BeGreaterOrEqualTo(0);
                 }
-                
+
                 cmp.Compare(maximum, result).Should().Be(0);
             }
         }

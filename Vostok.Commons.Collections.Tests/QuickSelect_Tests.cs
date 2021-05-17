@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
@@ -12,13 +13,15 @@ namespace Vostok.Commons.Collections.Tests
         [TestCase(QuickselectSortOrder.Descending)]
         public void Should_move_top_items_to_the_beginning_of_given_array(QuickselectSortOrder order)
         {
-            var itemsCount = ThreadSafeRandom.Next(100, 200);
+            var random = new Random();
+            
+            var itemsCount = random.Next(100, 200);
             var items = new int[itemsCount];
             for (var i = 1; i <= itemsCount - 1; i++)
             {
                 for (var j = 0; j < itemsCount; j++)
                 {
-                    items[j] = ThreadSafeRandom.Next(10);
+                    items[j] = random.Next(10);
                 }
 
                 var result = items.QuickSelect(i, order: order);

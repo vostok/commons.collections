@@ -7,6 +7,9 @@ namespace Vostok.Commons.Collections
     [PublicAPI]
     public static class Quickselect
     {
+        [ThreadStatic]
+        private static Random random;
+        
         public static T QuickSelect<T>(this T[] list, int top, IComparer<T> comparer = null, QuickselectSortOrder order = QuickselectSortOrder.Ascending)
         {
             if (top > list.Length)
@@ -37,7 +40,7 @@ namespace Vostok.Commons.Collections
                 else
                     startIndex = pivotIndex + 1;
 
-                pivotIndex = ThreadSafeRandom.Next(startIndex, endIndex);
+                pivotIndex = Next(startIndex, endIndex);
             }
 
             return list[pivotIndex];
@@ -78,6 +81,16 @@ namespace Vostok.Commons.Collections
             var temp = list[index1];
             list[index1] = list[index2];
             list[index2] = temp;
+        }
+        
+        private static int Next(int minValue, int maxValue)
+        {
+            return ObtainRandom().Next(minValue, maxValue);
+        }
+
+        private static Random ObtainRandom()
+        {
+            return random ?? (random = new Random(Guid.NewGuid().GetHashCode()));
         }
     }
 }

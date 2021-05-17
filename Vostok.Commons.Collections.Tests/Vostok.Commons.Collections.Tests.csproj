@@ -21,10 +21,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Vostok.Commons.Collections\Vostok.Commons.Collections.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Vostok.Commons.Threading">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\vostok.commons.threading\Vostok.Commons.Threading\bin\Release\netstandard2.0\Vostok.Commons.Threading.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 </Project>

@@ -228,6 +228,107 @@ namespace Vostok.Commons.Collections
             }
         }
 
+
+
+        /// <summary>
+        /// Returns a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the same data plus <paramref name="pairsToAdd"/> pairs/>.
+        /// <remarks>This method not check given collection of <paramref name="pairsToAdd"/> on keys uniqueness. If it contains different elements with the same key, they all will be set.</remarks>
+        /// </summary>
+        /// <param name="pairsToAdd">The collection of new key-value pairs to set.</param>
+        /// <param name="overwrite">Specifies the behavior in case a value with the same key exists. If <c>true</c>, the value will be overwritten in the returned dictionary. Otherwise, the new value is ignored and the original dictionary is returned.</param>
+        public unsafe ImmutableArrayDictionary<TKey, TValue> SetRangeUnsafe((TKey key, TValue value)[] pairsToAdd, bool overwrite = true)
+        {
+            var length = pairsToAdd.Length;
+            if (length >= 1024)
+            {
+                return SetRangeSafeFromStackOverflowPath(pairsToAdd, overwrite);
+            }
+
+            Pair[] reallocatedArray;
+
+            var indicesCountToOverride = 0;
+            var equalItemsCount = 0;
+            var oldIndices = stackalloc int[length];
+            var hashes = stackalloc int[length];
+
+            for (var i = 0; i < length; i++)
+            {
+                var (key, value) = pairsToAdd[i];
+                var hash = hashes[i] = ComputeHash(key);
+                if (Find(key, hash, out var oldValue, out var oldIndex))
+                {
+                    if (!overwrite || Equals(value, oldValue))
+                    {
+                        //Required to distinguish from zero-index and NeedToAppend marker.
+                        oldIndices[i] = NoNeedToSetMarker;
+                        equalItemsCount++;
+                        continue;
+                    }
+
+                    oldIndices[i] = oldIndex;
+                    indicesCountToOverride++;
+                    continue;
+                }
+
+                oldIndices[i] = NeedToAppendMarker;
+            }
+
+            if (equalItemsCount == length)
+                return this;
+
+            var newItemsCount = Count + length - indicesCountToOverride - equalItemsCount;
+            if (indicesCountToOverride > 0 || newItemsCount > pairs.Length)
+            {
+                //If we are have enough capacity but have items to override we will recreate array with old capacity.
+                var reallocatedArraySize = newItemsCount > pairs.Length ? Math.Max(DefaultCapacity, newItemsCount * 2) : pairs.Length;
+                reallocatedArray = ReallocateArray(reallocatedArraySize);
+                var newCount = RefillArray(reallocatedArray, pairsToAdd, oldIndices, hashes, Count);
+
+                return new ImmutableArrayDictionary<TKey, TValue>(reallocatedArray, newCount, keyComparer);
+            }
+
+            lock (pairs)
+            {
+                int newCount;
+                if (pairs[Count].IsOccupied)
+                {
+                    reallocatedArray = ReallocateArray(pairs.Length);
+                    newCount = RefillArray(reallocatedArray, pairsToAdd, oldIndices, hashes, Count);
+                    return new ImmutableArrayDictionary<TKey, TValue>(reallocatedArray, newCount, keyComparer);
+                }
+
+                //RefillArray is generic and can replace items. But at this point there is no chance to have items to replace. There are only with NeedToAppendMarker or NoNeedToSetMarker.
+                newCount = RefillArray(pairs, pairsToAdd, oldIndices, hashes, Count);
+                return new ImmutableArrayDictionary<TKey, TValue>(pairs, newCount, keyComparer);
+            }
+
+            int RefillArray(Pair[] placeholder, (TKey key, TValue value)[] newValues, int* indicesOnOldValues, int* hashesOfNewValues, int initialAppendIndex)
+            {
+                var indexToSet = initialAppendIndex;
+                for (var i = 0; i < newValues.Length; i++)
+                {
+                    var oldIndex = indicesOnOldValues[i];
+
+                    if (oldIndex == NeedToAppendMarker)
+                    {
+                        var (key, value) = newValues[i];
+                        placeholder[indexToSet] = new Pair(key, value, hashesOfNewValues[i]);
+                        indexToSet++;
+                    }
+
+                    else if (oldIndex >= 0)
+                    {
+                        var (key, value) = newValues[i];
+                        placeholder[oldIndex] = new Pair(key, value, hashesOfNewValues[i]);
+                    }
+
+                    //If "oldIndex" have NoNeedToSet marker value then just skip this.
+                }
+
+                return indexToSet;
+            }
+        }
+
         private ImmutableArrayDictionary<TKey, TValue> SetRangeSafeFromStackOverflowPath((TKey key, TValue value)[] pairsToAdd, bool overwrite)
         {
             var x = this;

@@ -28,7 +28,7 @@ namespace Vostok.Commons.Collections.Tests
         private ImmutableArrayDictionary<string, string> dict;
 
 
-        [Params(4, 25, 250)]
+        [Params(4, 5, 6, 7, 8, 9, 10, 25, 250)]
         public int Count;
 
         [Params(true, false)]

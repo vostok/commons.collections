@@ -15,14 +15,20 @@ namespace Vostok.Commons.Collections
             if (top > list.Length)
                 throw new InvalidOperationException($"Requested to select top {top} items from array with size {list.Length}.");
 
-            if (top == list.Length)
-                return list[top - 1];
-
-            if (top <= 0)
-                return list[0];
-
             if (comparer == null)
                 comparer = Comparer<T>.Default;
+
+            if (top == list.Length)
+            {
+                list.Swap(list.IndexOfMax(comparer, order), top - 1);
+                return list[top - 1];
+            }
+
+            if (top <= 0)
+            {
+                list.Swap(list.IndexOfMin(comparer, order), 0);
+                return list[0];
+            }
 
             var startIndex = 0;
             var endIndex = list.Length - 1;
@@ -78,9 +84,26 @@ namespace Vostok.Commons.Collections
 
         private static void Swap<T>(this T[] list, int index1, int index2)
         {
+            // ReSharper disable once SwapViaDeconstruction
             var temp = list[index1];
             list[index1] = list[index2];
             list[index2] = temp;
+        }
+
+        private static int IndexOfMin<T>(this T[] list, IComparer<T> comparer, QuickselectSortOrder order)
+        {
+            var minIndex = 0;
+            for (var i = 0; i < list.Length; i++)
+            {
+                if (comparer.Compare(list[i], list[minIndex]) * (int)order < 0)
+                    minIndex = i;
+            }
+            return minIndex;
+        }
+
+        private static int IndexOfMax<T>(this T[] list, IComparer<T> comparer, QuickselectSortOrder order)
+        {
+            return list.IndexOfMin(comparer, (QuickselectSortOrder)((int) order * -1));
         }
 
         private static int Next(int minValue, int maxValue)

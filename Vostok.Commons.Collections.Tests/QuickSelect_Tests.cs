@@ -11,6 +11,17 @@ namespace Vostok.Commons.Collections.Tests
     {
         [TestCase(QuickselectSortOrder.Ascending)]
         [TestCase(QuickselectSortOrder.Descending)]
+        public void Should_work_in_trivial_cases(QuickselectSortOrder order)
+        {
+            var items = new []{1, 7, 4, 15, 34, -54, 5};
+
+            items.QuickSelect(0, order:order).Should().Be(order == QuickselectSortOrder.Ascending ? items.Min() : items.Max());
+            items.QuickSelect(items.Length, order:order).Should().Be(order == QuickselectSortOrder.Ascending ? items.Max() : items.Min());
+            items.QuickSelect(2, order:order).Should().Be(order == QuickselectSortOrder.Ascending ? 4 : 7);
+        }
+
+        [TestCase(QuickselectSortOrder.Ascending)]
+        [TestCase(QuickselectSortOrder.Descending)]
         public void Should_move_top_items_to_the_beginning_of_given_array(QuickselectSortOrder order)
         {
             var random = new Random();
@@ -61,6 +72,19 @@ namespace Vostok.Commons.Collections.Tests
             var result = items.QuickSelect(6000, order: QuickselectSortOrder.Descending, comparer: comparer);
             comparer.Called.Should().BeLessThan(itemsCount * 7); // Avg Performace O(n)
             AssertQuickSortResult(QuickselectSortOrder.Descending, items, 6000, result);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void Should_select_min_and_max_in_N_comparisons(bool min)
+        {
+            var itemsCount = 8000;
+            var items = Enumerable.Range(0, itemsCount).ToArray();
+            var comparer = new CountedComparer<int>(Comparer<int>.Default);
+            var result = items.QuickSelect(min ? 0 : itemsCount, order: QuickselectSortOrder.Descending, comparer: comparer);
+
+            comparer.Called.Should().Be(itemsCount);
+            AssertQuickSortResult(QuickselectSortOrder.Descending, items, min ? 0 : itemsCount - 1, result);
         }
 
         [TestCase(QuickselectSortOrder.Ascending)]

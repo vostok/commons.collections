@@ -1,3 +1,7 @@
+## 0.1.4 (07-10-2021):
+
+Fixed QuickSelect bug with corner case: first or last element of array.
+
 ## 0.1.3 (29-02-2020):
 
 Added BufferPool.Default shared instance.

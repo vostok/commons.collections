@@ -1,3 +1,7 @@
+## 0.1.5 (06-12-2021):
+
+Added `net6.0` target.
+
 ## 0.1.4 (07-10-2021):
 
 Fixed QuickSelect bug with corner case: first or last element of array.

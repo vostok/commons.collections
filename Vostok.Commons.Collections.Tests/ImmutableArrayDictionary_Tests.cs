@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using Dict = Vostok.Commons.Collections.ImmutableArrayDictionary<string, string>;
@@ -331,6 +332,19 @@ namespace Vostok.Commons.Collections.Tests
                 .Set("e", "f");
 
             var copy = new Dict(source);
+
+            copy.Should().Equal(source);
+        }
+
+        [Test]
+        public void Copy_constructor_with_capacity_should_copy_all_pairs_from_source()
+        {
+            var source = new Dict(3)
+                .Set("a", "b")
+                .Set("c", "d")
+                .Set("e", "f");
+
+            var copy = new Dict(100, 3, source.Select(x => (x.Key, x.Value)));
 
             copy.Should().Equal(source);
         }

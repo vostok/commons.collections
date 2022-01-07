@@ -56,6 +56,19 @@ namespace Vostok.Commons.Collections
                 pairs[index++] = new Pair(pair.Key, pair.Value, this.keyComparer.GetHashCode(pair.Key));
         }
 
+        /// <summary>
+        /// Create a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with pairs from given <paramref name="source"/>.
+        /// This constructor not check keys uniqueness!
+        /// </summary>
+        public ImmutableArrayDictionary(int capacity, int count, IEnumerable<(TKey key, TValue value)> source, [CanBeNull] IEqualityComparer<TKey> keyComparer = null)
+            : this(new Pair[capacity], count, keyComparer)
+        {
+            var index = 0;
+
+            foreach (var (key, value) in source)
+                pairs[index++] = new Pair(key, value, this.keyComparer.GetHashCode(key));
+        }
+
         private ImmutableArrayDictionary(Pair[] pairs, int count, IEqualityComparer<TKey> keyComparer)
         {
             this.pairs = pairs;

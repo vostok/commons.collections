@@ -114,6 +114,48 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
+        public void SetUnsafe_should_replace_existing_value_when_provided_with_a_different_value()
+        {
+            var dictionary = Dict.Empty
+                .Set("k1", "v1")
+                .Set("k2", "v2")
+                .Set("k3", "v3");
+
+            dictionary.SetUnsafe("k2", "vx", true);
+
+            dictionary["k2"].Should().Be("vx");
+            dictionary.Count.Should().Be(3);
+        }
+
+        [Test]
+        public void SetUnsafe_should_not_replace_existing_value_when_provided_with_a_different_value_and_overwrite_flag_is_false()
+        {
+            var dictionary = Dict.Empty
+                .Set("k1", "v1")
+                .Set("k2", "v2")
+                .Set("k3", "v3");
+
+            dictionary.SetUnsafe("k2", "vx", true, false);
+
+            dictionary["k2"].Should().Be("v2");
+            dictionary.Count.Should().Be(3);
+        }
+
+        [Test]
+        public void SetUnsafe_should_not_replace_existing_value_and_add_a_new_one_when_check_uniqueness_flag_is_false()
+        {
+            var dictionary = Dict.Empty
+                .Set("k1", "v1")
+                .Set("k2", "v2")
+                .Set("k3", "v3");
+
+            dictionary.SetUnsafe("k2", "vx", false, true);
+            
+            dictionary.Count.Should().Be(4);
+            dictionary.Keys.Should().BeEquivalentTo("k1", "k2", "k3", "k2");
+        }
+
+        [Test]
         public void Set_should_not_modify_base_instance_when_deriving_from_it_by_replacing_existing_value()
         {
             var dictionaryBefore = Dict.Empty
@@ -148,6 +190,22 @@ namespace Vostok.Commons.Collections.Tests
                 dictionary.Count.Should().Be(i);
                 dictionary.ContainsKey(newKey).Should().BeFalse();
                 dictionary = newDictionary;
+            }
+        }
+
+        [Test]
+        public void SetUnsafe_should_be_able_to_grow_instance_when_adding_unique_keys()
+        {
+            var dictionary = new Dict(0);
+
+            for (var i = 0; i < 100; i++)
+            {
+                var newKey = "key-" + i;
+                var newValue = "value-" + i;
+                dictionary.SetUnsafe(newKey, newValue);
+
+                dictionary.Count.Should().Be(i + 1);
+                dictionary[newKey].Should().Be(newValue);
             }
         }
 
@@ -332,19 +390,6 @@ namespace Vostok.Commons.Collections.Tests
                 .Set("e", "f");
 
             var copy = new Dict(source);
-
-            copy.Should().Equal(source);
-        }
-
-        [Test]
-        public void Copy_constructor_with_capacity_should_copy_all_pairs_from_source()
-        {
-            var source = new Dict(3)
-                .Set("a", "b")
-                .Set("c", "d")
-                .Set("e", "f");
-
-            var copy = new Dict(100, 3, source.Select(x => (x.Key, x.Value)));
 
             copy.Should().Equal(source);
         }

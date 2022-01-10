@@ -22,9 +22,9 @@ namespace Vostok.Commons.Collections
         /// </summary>
         public static readonly ImmutableArrayDictionary<TKey, TValue> Empty = new ImmutableArrayDictionary<TKey, TValue>(0);
 
-        private readonly Pair[] pairs;
-
         private readonly IEqualityComparer<TKey> keyComparer;
+
+        private Pair[] pairs;
 
         /// <summary>
         /// Create a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with default capacity.
@@ -56,19 +56,6 @@ namespace Vostok.Commons.Collections
                 pairs[index++] = new Pair(pair.Key, pair.Value, this.keyComparer.GetHashCode(pair.Key));
         }
 
-        /// <summary>
-        /// Create a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with pairs from given <paramref name="source"/>.
-        /// This constructor not check keys uniqueness!
-        /// </summary>
-        public ImmutableArrayDictionary(int capacity, int count, IEnumerable<(TKey key, TValue value)> source, [CanBeNull] IEqualityComparer<TKey> keyComparer = null)
-            : this(new Pair[capacity], count, keyComparer)
-        {
-            var index = 0;
-
-            foreach (var (key, value) in source)
-                pairs[index++] = new Pair(key, value, this.keyComparer.GetHashCode(key));
-        }
-
         private ImmutableArrayDictionary(Pair[] pairs, int count, IEqualityComparer<TKey> keyComparer)
         {
             this.pairs = pairs;
@@ -78,7 +65,7 @@ namespace Vostok.Commons.Collections
         }
 
         /// <inheritdoc />
-        public int Count { get; }
+        public int Count { get; private set; }
 
         /// <inheritdoc />
         public IEnumerable<TKey> Keys =>
@@ -140,6 +127,39 @@ namespace Vostok.Commons.Collections
             }
 
             return new ImmutableArrayDictionary<TKey, TValue>(pairs, Count + 1, keyComparer);
+        }
+
+        /// <summary>
+        /// Add a new pair of <paramref name="key"/> and <paramref name="value"/> AND MODIFY this collection.
+        /// </summary>
+        /// <param name="key">The key to set value for.</param>
+        /// <param name="value">The value to write.</param>
+        /// <param name="checkKeysUniqueness">Specifies the behavior in case a value with the same key exists. If <c>true</c>, see the instruction about <paramref name="overwrite"/> parameter. Otherwise the given key and value will be append to the end of the underling Array.</param>
+        /// <param name="overwrite">Specifies the behavior in case a value with the same key exists and if <paramref name="checkKeysUniqueness"/> is set <c>True</c> . If <c>true</c>, the value will be overwritten in the dictionary. Otherwise, the new value is ignored.</param>
+        public void SetUnsafe(TKey key, TValue value, bool checkKeysUniqueness = false, bool overwrite = true)
+        {
+            var hash = ComputeHash(key);
+
+            var newPair = new Pair(key, value, hash);
+            if (checkKeysUniqueness)
+            {
+                if (Find(key, hash, out var oldValue, out var oldIndex))
+                {
+                    if (!overwrite || Equals(value, oldValue))
+                        return;
+
+                    pairs[oldIndex] = newPair;
+                    return;
+                }
+            }
+
+            if (pairs.Length == Count)
+            {
+                pairs = ReallocateArray(Math.Max(DefaultCapacity, pairs.Length * 2));
+            }
+
+            pairs[Count] = newPair;
+            Count += 1;
         }
 
         /// <summary>

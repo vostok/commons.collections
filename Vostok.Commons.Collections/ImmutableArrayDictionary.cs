@@ -130,36 +130,43 @@ namespace Vostok.Commons.Collections
         }
 
         /// <summary>
-        /// Add a new pair of <paramref name="key"/> and <paramref name="value"/> AND MODIFY this collection.
+        /// Append a new pair of <paramref name="key"/> and <paramref name="value"/> to underlying array AND MODIFY this instance.
+        /// This method is not thread safe.
         /// </summary>
         /// <param name="key">The key to set value for.</param>
         /// <param name="value">The value to write.</param>
-        /// <param name="checkKeysUniqueness">Specifies the behavior in case a value with the same key exists. If <c>true</c>, see the instruction about <paramref name="overwrite"/> parameter. Otherwise the given key and value will be append to the end of the underling Array.</param>
-        /// <param name="overwrite">Specifies the behavior in case a value with the same key exists and if <paramref name="checkKeysUniqueness"/> is set <c>True</c> . If <c>true</c>, the value will be overwritten in the dictionary. Otherwise, the new value is ignored.</param>
-        public void SetUnsafe(TKey key, TValue value, bool checkKeysUniqueness = false, bool overwrite = true)
+        public void AppendUnsafe(TKey key, TValue value)
         {
             var hash = ComputeHash(key);
 
             var newPair = new Pair(key, value, hash);
-            if (checkKeysUniqueness)
-            {
-                if (Find(key, hash, out var oldValue, out var oldIndex))
-                {
-                    if (!overwrite || Equals(value, oldValue))
-                        return;
 
-                    pairs[oldIndex] = newPair;
+            AppendUnsafeInternal(newPair);
+        }
+
+        /// <summary>
+        /// Add a new pair of <paramref name="key"/> and <paramref name="value"/> AND MODIFY this instance.
+        /// This method is not thread safe.
+        /// </summary>
+        /// <param name="key">The key to set value for.</param>
+        /// <param name="value">The value to write.</param>
+        /// <param name="overwrite">Specifies the behavior in case a value with the same key exists. If <c>true</c>, the value will be overwritten. Otherwise, the new value is ignored.</param>
+        public void SetUnsafe(TKey key, TValue value, bool overwrite)
+        {
+            var hash = ComputeHash(key);
+
+            var newPair = new Pair(key, value, hash);
+
+            if (Find(key, hash, out var oldValue, out var oldIndex))
+            {
+                if (!overwrite || Equals(value, oldValue))
                     return;
-                }
+
+                pairs[oldIndex] = newPair;
+                return;
             }
 
-            if (pairs.Length == Count)
-            {
-                pairs = ReallocateArray(Math.Max(DefaultCapacity, pairs.Length * 2));
-            }
-
-            pairs[Count] = newPair;
-            Count += 1;
+            AppendUnsafeInternal(newPair);
         }
 
         /// <summary>
@@ -190,6 +197,17 @@ namespace Vostok.Commons.Collections
         /// <inheritdoc />
         public TValue this[TKey key] =>
             Find(key, out var value, out _) ? value : throw new KeyNotFoundException($"A value with key '{key}' is not present.");
+
+        private void AppendUnsafeInternal(Pair newPair)
+        {
+            if (pairs.Length == Count)
+            {
+                pairs = ReallocateArray(Math.Max(DefaultCapacity, pairs.Length * 2));
+            }
+
+            pairs[Count] = newPair;
+            Count += 1;
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
 using Dict = Vostok.Commons.Collections.ImmutableArrayDictionary<string, string>;
@@ -135,21 +134,21 @@ namespace Vostok.Commons.Collections.Tests
                 .Set("k2", "v2")
                 .Set("k3", "v3");
 
-            dictionary.SetUnsafe("k2", "vx", true, false);
+            dictionary.SetUnsafe("k2", "vx", false);
 
             dictionary["k2"].Should().Be("v2");
             dictionary.Count.Should().Be(3);
         }
 
         [Test]
-        public void SetUnsafe_should_not_replace_existing_value_and_add_a_new_one_when_check_uniqueness_flag_is_false()
+        public void AppendUnsafe_should_not_replace_existing_value_and_add_a_new_one()
         {
             var dictionary = Dict.Empty
                 .Set("k1", "v1")
                 .Set("k2", "v2")
                 .Set("k3", "v3");
 
-            dictionary.SetUnsafe("k2", "vx", false, true);
+            dictionary.AppendUnsafe("k2", "vx");
             
             dictionary.Count.Should().Be(4);
             dictionary.Keys.Should().BeEquivalentTo("k1", "k2", "k3", "k2");
@@ -194,7 +193,7 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
-        public void SetUnsafe_should_be_able_to_grow_instance_when_adding_unique_keys()
+        public void AppendUnsafe_should_be_able_to_grow_instance_when_adding_unique_keys()
         {
             var dictionary = new Dict(0);
 
@@ -202,7 +201,7 @@ namespace Vostok.Commons.Collections.Tests
             {
                 var newKey = "key-" + i;
                 var newValue = "value-" + i;
-                dictionary.SetUnsafe(newKey, newValue);
+                dictionary.AppendUnsafe(newKey, newValue);
 
                 dictionary.Count.Should().Be(i + 1);
                 dictionary[newKey].Should().Be(newValue);

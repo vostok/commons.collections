@@ -157,9 +157,9 @@ namespace Vostok.Commons.Collections
 
             var newPair = new Pair(key, value, hash);
 
-            if (Find(key, hash, out var oldValue, out var oldIndex))
+            if (Find(key, hash, out _, out var oldIndex))
             {
-                if (!overwrite || Equals(value, oldValue))
+                if (!overwrite)
                     return;
 
                 pairs[oldIndex] = newPair;

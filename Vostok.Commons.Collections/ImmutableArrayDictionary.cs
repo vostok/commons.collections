@@ -22,9 +22,9 @@ namespace Vostok.Commons.Collections
         /// </summary>
         public static readonly ImmutableArrayDictionary<TKey, TValue> Empty = new ImmutableArrayDictionary<TKey, TValue>(0);
 
-        private readonly Pair[] pairs;
-
         private readonly IEqualityComparer<TKey> keyComparer;
+
+        private Pair[] pairs;
 
         /// <summary>
         /// Create a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with default capacity.
@@ -65,7 +65,7 @@ namespace Vostok.Commons.Collections
         }
 
         /// <inheritdoc />
-        public int Count { get; }
+        public int Count { get; private set; }
 
         /// <inheritdoc />
         public IEnumerable<TKey> Keys =>
@@ -130,6 +130,46 @@ namespace Vostok.Commons.Collections
         }
 
         /// <summary>
+        /// Append a new pair of <paramref name="key"/> and <paramref name="value"/> to underlying array AND MODIFY this instance.
+        /// This method is not thread safe.
+        /// </summary>
+        /// <param name="key">The key to set value for.</param>
+        /// <param name="value">The value to write.</param>
+        public void AppendUnsafe(TKey key, TValue value)
+        {
+            var hash = ComputeHash(key);
+
+            var newPair = new Pair(key, value, hash);
+
+            AppendUnsafeInternal(newPair);
+        }
+
+        /// <summary>
+        /// Add a new pair of <paramref name="key"/> and <paramref name="value"/> AND MODIFY this instance.
+        /// This method is not thread safe.
+        /// </summary>
+        /// <param name="key">The key to set value for.</param>
+        /// <param name="value">The value to write.</param>
+        /// <param name="overwrite">Specifies the behavior in case a value with the same key exists. If <c>true</c>, the value will be overwritten. Otherwise, the new value is ignored.</param>
+        public void SetUnsafe(TKey key, TValue value, bool overwrite)
+        {
+            var hash = ComputeHash(key);
+
+            var newPair = new Pair(key, value, hash);
+
+            if (Find(key, hash, out _, out var oldIndex))
+            {
+                if (!overwrite)
+                    return;
+
+                pairs[oldIndex] = newPair;
+                return;
+            }
+
+            AppendUnsafeInternal(newPair);
+        }
+
+        /// <summary>
         /// Returns a new <see cref="ImmutableArrayDictionary{TKey,TValue}"/> with the same data except the value by <paramref name="key"/>. If there is no such key, the original dictionary is returned.
         /// </summary>
         public ImmutableArrayDictionary<TKey, TValue> Remove(TKey key)
@@ -157,6 +197,17 @@ namespace Vostok.Commons.Collections
         /// <inheritdoc />
         public TValue this[TKey key] =>
             Find(key, out var value, out _) ? value : throw new KeyNotFoundException($"A value with key '{key}' is not present.");
+
+        private void AppendUnsafeInternal(Pair newPair)
+        {
+            if (pairs.Length == Count)
+            {
+                pairs = ReallocateArray(Math.Max(DefaultCapacity, pairs.Length * 2));
+            }
+
+            pairs[Count] = newPair;
+            Count += 1;
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

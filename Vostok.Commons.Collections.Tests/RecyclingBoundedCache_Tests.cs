@@ -23,6 +23,14 @@ namespace Vostok.Commons.Collections.Tests
         }
 
         [Test]
+        public void Obtain_with_arg_should_cache_first_observed_value_and_serve_it_on_later_invocations()
+        {
+            cache.Obtain("key", 1, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key", 2, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key", 3, (_, arg) => arg).Should().Be(1);
+        }
+
+        [Test]
         public void Obtain_should_not_clean_cache_until_capacity_is_exceeded()
         {
             cache.Obtain("key1", _ => 1).Should().Be(1);
@@ -32,6 +40,18 @@ namespace Vostok.Commons.Collections.Tests
             cache.Obtain("key1", _ => 2).Should().Be(1);
             cache.Obtain("key2", _ => 2).Should().Be(1);
             cache.Obtain("key3", _ => 2).Should().Be(1);
+        }
+
+        [Test]
+        public void Obtain_aith_arg_should_not_clean_cache_until_capacity_is_exceeded()
+        {
+            cache.Obtain("key1", 1, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key2", 1, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key3", 1, (_, arg) => arg).Should().Be(1);
+
+            cache.Obtain("key1", 2, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key2", 2, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key3", 2, (_, arg) => arg).Should().Be(1);
         }
 
         [Test]
@@ -45,6 +65,19 @@ namespace Vostok.Commons.Collections.Tests
             cache.Obtain("key1", _ => 2).Should().Be(2);
             cache.Obtain("key2", _ => 2).Should().Be(2);
             cache.Obtain("key3", _ => 2).Should().Be(2);
+        }
+
+        [Test]
+        public void Obtain_with_arg_should_wipe_the_cache_when_capacity_is_exceeded()
+        {
+            cache.Obtain("key1", 1, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key2", 1, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key3", 1, (_, arg) => arg).Should().Be(1);
+            cache.Obtain("key4", 1, (_, arg) => arg).Should().Be(1);
+
+            cache.Obtain("key1", 2, (_, arg) => arg).Should().Be(2);
+            cache.Obtain("key2", 2, (_, arg) => arg).Should().Be(2);
+            cache.Obtain("key3", 2, (_, arg) => arg).Should().Be(2);
         }
     }
 }

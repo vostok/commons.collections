@@ -32,12 +32,20 @@ namespace Vostok.Commons.Collections
             if (currentState.Items.TryGetValue(key, out var value))
                 return value;
 
-            if (currentState.Items.TryAdd(key, value = factory(key)))
-            {
-                var newCount = Interlocked.Increment(ref currentState.Count);
-                if (newCount > capacity)
-                    Interlocked.Exchange(ref state, new RecyclingBoundedCacheState(comparer));
-            }
+            value = factory(key);
+            TryAddToCachedItems(key, currentState, value);
+
+            return value;
+        }
+
+        public TValue Obtain<TArg>(TKey key, TArg arg, Func<TKey, TArg, TValue> factory)
+        {
+            var currentState = state;
+            if (currentState.Items.TryGetValue(key, out var value))
+                return value;
+
+            value = factory(key, arg);
+            TryAddToCachedItems(key, currentState, value);
 
             return value;
         }
@@ -48,12 +56,8 @@ namespace Vostok.Commons.Collections
             if (currentState.Items.TryGetValue(key, out var value))
                 return value;
 
-            if (currentState.Items.TryAdd(key, value = await factory(key).ConfigureAwait(false)))
-            {
-                var newCount = Interlocked.Increment(ref currentState.Count);
-                if (newCount > capacity)
-                    Interlocked.Exchange(ref state, new RecyclingBoundedCacheState(comparer));
-            }
+            value = await factory(key).ConfigureAwait(false);
+            TryAddToCachedItems(key, currentState, value);
 
             return value;
         }
@@ -74,6 +78,16 @@ namespace Vostok.Commons.Collections
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
             => state.Items.GetEnumerator();
+
+        private void TryAddToCachedItems(TKey key, RecyclingBoundedCacheState currentState, TValue value)
+        {
+            if (currentState.Items.TryAdd(key, value))
+            {
+                var newCount = Interlocked.Increment(ref currentState.Count);
+                if (newCount > capacity)
+                    Interlocked.Exchange(ref state, new RecyclingBoundedCacheState(comparer));
+            }
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

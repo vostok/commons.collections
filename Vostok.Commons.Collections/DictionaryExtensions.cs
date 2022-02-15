@@ -87,5 +87,25 @@ namespace Vostok.Commons.Collections
             OnlyInRight = onlyInRight;
         }
 #endif
+
+        public void Deconstruct(
+#if NET5 || NET6
+            out IReadOnlySet<TKey> onlyInLeft,
+            out IReadOnlySet<TKey> changed,
+            out IReadOnlySet<TKey> same,
+            out IReadOnlySet<TKey> onlyInRight
+#else
+            out IReadOnlyCollection<TKey> onlyInLeft,
+            out IReadOnlyCollection<TKey> changed,
+            out IReadOnlyCollection<TKey> same,
+            out IReadOnlyCollection<TKey> onlyInRight
+#endif
+            )
+        {
+            onlyInLeft = OnlyInLeft;
+            changed = Changed;
+            same = Same;
+            onlyInRight = OnlyInRight;
+        }
     }
 }

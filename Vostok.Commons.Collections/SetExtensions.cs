@@ -5,10 +5,10 @@ namespace Vostok.Commons.Collections
 {
     internal static class SetExtensions
     {
-#if NETSTANDARD2_0
-        public static SetDiff<T> GetDiff<T>(this ISet<T> left, ISet<T> right)
-#else
+#if NET5 || NET6
         public static SetDiff<T> GetDiff<T>(this IReadOnlySet<T> left, IReadOnlySet<T> right)
+#else
+        public static SetDiff<T> GetDiff<T>(this ISet<T> left, ISet<T> right)
 #endif
             where T : notnull
         {
@@ -22,7 +22,7 @@ namespace Vostok.Commons.Collections
     
     internal class SetDiff<T>
     {
-#if !NETSTANDARD2_0
+#if NET5 || NET6
         public IReadOnlySet<T> OnlyInLeft { get; }
         public IReadOnlySet<T> Same { get; }
         public IReadOnlySet<T> OnlyInRight { get; }
@@ -34,7 +34,7 @@ namespace Vostok.Commons.Collections
 
         public IEnumerable<T> Different => OnlyInLeft.Concat(OnlyInRight);
 
-#if !NETSTANDARD2_0
+#if NET5 || NET6
         public SetDiff(
             IReadOnlySet<T> onlyInLeft,
             IReadOnlySet<T> same,

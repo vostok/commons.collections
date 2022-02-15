@@ -48,7 +48,7 @@ namespace Vostok.Commons.Collections
 
     internal class DictionariesDiff<TKey>
     {
-#if !NETSTANDARD2_0
+#if NET5 || NET6
         public IReadOnlySet<TKey> OnlyInLeft { get; }
         public IReadOnlySet<TKey> Changed { get; }
         public IReadOnlySet<TKey> Same { get; }
@@ -62,7 +62,7 @@ namespace Vostok.Commons.Collections
 
         public IEnumerable<TKey> Different => OnlyInLeft.Concat(OnlyInRight).Concat(Changed);
 
-#if !NETSTANDARD2_0
+#if NET5 || NET6
         public DictionariesDiff(
             IReadOnlySet<TKey> onlyInLeft,
             IReadOnlySet<TKey> changed,

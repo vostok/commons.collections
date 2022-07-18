@@ -12,6 +12,7 @@ namespace Vostok.Commons.Collections.Tests
     internal class ConcurrentBoundedQueue_Tests
     {
         private const int Capacity = 5;
+        private const int Batch = 2;
 
         private ConcurrentBoundedQueue<string> queue;
         private string[] drainResult;
@@ -19,7 +20,7 @@ namespace Vostok.Commons.Collections.Tests
         [SetUp]
         public void SetUp()
         {
-            queue = new ConcurrentBoundedQueue<string>(Capacity);
+            queue = new ConcurrentBoundedQueue<string>(Capacity, Batch);
             drainResult = new string[Capacity];
         }
 
@@ -191,6 +192,42 @@ namespace Vostok.Commons.Collections.Tests
 
             task.IsCompleted.Should().BeFalse();
 
+            queue.TryAdd("").Should().BeTrue();
+
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+        
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout()
+        {
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Milliseconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_should_return_after_delay()
+        {
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Milliseconds(), 100.Seconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_should_return_after_x_events_are_added()
+        {
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            queue.TryAdd("").Should().BeTrue();
             queue.TryAdd("").Should().BeTrue();
 
             new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())

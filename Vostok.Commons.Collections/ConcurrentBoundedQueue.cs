@@ -35,6 +35,8 @@ namespace Vostok.Commons.Collections
                 throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be non-negative");
             if (drainBatchCount > capacity)
                 throw new ArgumentOutOfRangeException(nameof(drainBatchCount), "The drain count must be less or equal than capacity");
+            if (drainBatchCount < 1)
+                throw new ArgumentOutOfRangeException(nameof(capacity), "The drain count must be positive");
 
             items = new T[capacity];
             drainLock = new object();

@@ -199,7 +199,7 @@ namespace Vostok.Commons.Collections.Tests
         }
         
         [Test]
-        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout()
+        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_with_big_delay()
         {
             var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Milliseconds());
 
@@ -208,26 +208,43 @@ namespace Vostok.Commons.Collections.Tests
             new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
         }
-
+        
         [Test]
-        public void TryWaitForNewItemsBatchAsync_should_return_after_delay()
+        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_with_small_delay()
         {
-            var task = queue.TryWaitForNewItemsBatchAsync(100.Milliseconds(), 100.Seconds());
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Milliseconds(), 1.Seconds());
 
-            task.IsCompleted.Should().BeFalse();
-
+            new Action(() => task.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(0.5.Seconds());
+            
             new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
         }
 
         [Test]
-        public void TryWaitForNewItemsBatchAsync_should_return_after_x_events_are_added()
+        public void TryWaitForNewItemsBatchAsync_should_return_after_delay()
+        {
+            var task = queue.TryWaitForNewItemsBatchAsync(1.Seconds(), 100.Seconds());
+
+            queue.TryAdd("").Should().BeTrue();
+            
+            new Action(() => task.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(0.5.Seconds());
+
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_should_return_after_batch_events_are_added()
         {
             var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
 
-            task.IsCompleted.Should().BeFalse();
-
             queue.TryAdd("").Should().BeTrue();
+            
+            new Action(() => task.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(0.5.Seconds());
+            
             queue.TryAdd("").Should().BeTrue();
 
             new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())

@@ -174,14 +174,20 @@ namespace Vostok.Commons.Collections
 
             using (var cts = new CancellationTokenSource())
             {
-                var waitTimeout = Task.Delay(timeout, cts.Token);
                 var waitDelay = Task.Delay(delay, cts.Token);
+                var waitTimeout = Task.Delay(timeout, cts.Token);
 
-                await Task.WhenAny(canDrainBatch.Task, waitDelay, waitTimeout).ConfigureAwait(false);
+                var result = await Task.WhenAny(canDrainBatch.Task, waitDelay, waitTimeout).ConfigureAwait(false);
+                if (result == canDrainBatch.Task)
+                {
+                    cts.Cancel();
+                    return true;
+                }
+
+                result = await Task.WhenAny(canDrainAny.Task, waitTimeout).ConfigureAwait(false);
                 
                 cts.Cancel();
-                
-                return canDrainAny.Task.IsCompleted;
+                return result != waitTimeout;
             }
         }
 

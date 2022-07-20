@@ -199,9 +199,9 @@ namespace Vostok.Commons.Collections.Tests
         }
         
         [Test]
-        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_with_big_delay()
+        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_without_items()
         {
-            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Milliseconds());
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Milliseconds());
 
             task.IsCompleted.Should().BeFalse();
 
@@ -210,21 +210,9 @@ namespace Vostok.Commons.Collections.Tests
         }
         
         [Test]
-        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_with_small_delay()
+        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_without_enough_items()
         {
-            var task = queue.TryWaitForNewItemsBatchAsync(100.Milliseconds(), 1.Seconds());
-
-            new Action(() => task.IsCompleted.Should().BeFalse())
-                .ShouldNotFailIn(0.5.Seconds());
-            
-            new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
-                .ShouldPassIn(1.Seconds());
-        }
-
-        [Test]
-        public void TryWaitForNewItemsBatchAsync_should_return_after_delay()
-        {
-            var task = queue.TryWaitForNewItemsBatchAsync(1.Seconds(), 100.Seconds());
+            var task = queue.TryWaitForNewItemsBatchAsync(1.Seconds());
 
             queue.TryAdd("").Should().BeTrue();
             
@@ -238,7 +226,7 @@ namespace Vostok.Commons.Collections.Tests
         [Test]
         public void TryWaitForNewItemsBatchAsync_should_return_after_batch_events_are_added()
         {
-            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
 
             queue.TryAdd("").Should().BeTrue();
             
@@ -258,13 +246,13 @@ namespace Vostok.Commons.Collections.Tests
             for (int i = 0; i < items; i++)
                 queue.TryAdd("").Should().BeTrue();
             
-            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
             new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
 
             queue.Drain(drainResult, 0, 2).Should().Be(2);
             
-            task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
             new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
             
@@ -278,15 +266,17 @@ namespace Vostok.Commons.Collections.Tests
             for (int i = 0; i < items; i++)
                 queue.TryAdd("").Should().BeTrue();
             
-            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            var task = queue.TryWaitForNewItemsBatchAsync(1.Seconds());
             new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
             
             queue.Drain(drainResult, 0, 2).Should().Be(2);
             
-            task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            task = queue.TryWaitForNewItemsBatchAsync(1.Seconds());
             new Action(() => task.IsCompleted.Should().BeFalse())
                 .ShouldNotFailIn(0.5.Seconds());
+            new Action(() => (task.IsCompleted && task.Result == (items - 2 > 0)).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
             
             queue.Drain(drainResult, 0, 2).Should().Be(items - 2);
         }

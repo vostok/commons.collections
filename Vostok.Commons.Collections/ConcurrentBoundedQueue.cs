@@ -175,34 +175,24 @@ namespace Vostok.Commons.Collections
         }
         
         /// <summary>
-        /// <para>Asynchronously waits until something is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.</para>
-        /// <para>If there are less than batch items to drain, additionally waits <paramref name="delay"/> delay.</para>
+        /// Asynchronously waits until batch is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.
         /// </summary>
         /// <returns><c>true</c> if there is something to drain, <c>false</c> otherwise.</returns>
-        public async Task<bool> TryWaitForNewItemsBatchAsync(TimeSpan delay, TimeSpan timeout)
+        public async Task<bool> TryWaitForNewItemsBatchAsync(TimeSpan timeout)
         {
             if (canDrainBatch.Task.IsCompleted)
                 return true;
 
-            if (delay > timeout)
-                delay = timeout;
-            
             using (var cts = new CancellationTokenSource())
             {
-                var waitDelay = Task.Delay(delay, cts.Token);
                 var waitTimeout = Task.Delay(timeout, cts.Token);
 
-                var result = await Task.WhenAny(canDrainBatch.Task, waitDelay, waitTimeout).ConfigureAwait(false);
-                if (result != waitDelay && result != waitTimeout)
-                {
-                    cts.Cancel();
-                    return true;
-                }
+                var result = await Task.WhenAny(canDrainBatch.Task, waitTimeout).ConfigureAwait(false);
+                if (result == waitTimeout)
+                    return canDrainAny.Task.IsCompleted;
 
-                result = await Task.WhenAny(canDrainAny.Task, waitTimeout).ConfigureAwait(false);
-                
                 cts.Cancel();
-                return result != waitTimeout;
+                return true;
             }
         }
 

@@ -58,7 +58,7 @@ namespace Vostok.Commons.Collections.Tests
                     while (!cancellation.IsCancellationRequested || writers.Any(w => !w.IsCompleted) || queue.Count > 0)
                     {
                         var tryWaitForNewItemsAsync = useBatch
-                            ? queue.TryWaitForNewItemsBatchAsync(10.Milliseconds(), 100.Milliseconds()).ConfigureAwait(false)
+                            ? queue.TryWaitForNewItemsBatchAsync(10.Milliseconds()).ConfigureAwait(false)
                             : queue.TryWaitForNewItemsAsync(100.Milliseconds()).ConfigureAwait(false);
                         if (!await tryWaitForNewItemsAsync)
                         {

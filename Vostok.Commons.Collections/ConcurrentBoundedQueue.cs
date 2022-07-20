@@ -176,6 +176,9 @@ namespace Vostok.Commons.Collections
             if (canDrainBatch.Task.IsCompleted)
                 return true;
 
+            if (delay > timeout)
+                delay = timeout;
+            
             using (var cts = new CancellationTokenSource())
             {
                 var waitDelay = Task.Delay(delay, cts.Token);

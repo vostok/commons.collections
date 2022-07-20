@@ -287,12 +287,16 @@ namespace Vostok.Commons.Collections.Tests
             queue.TryAdd("").Should().BeTrue();
             queue.TryAdd("").Should().BeTrue();
 
-            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
+            var task1 = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
             queue.Drain(drainResult, 0, 1).Should().Be(1);
+            var task2 = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
 
             // note (kungurtsev, 20.07.2022): task is finished, but there isn't batch items
-            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+            new Action(() => (task1.IsCompleted && task1.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
+            // note (kungurtsev, 20.07.2022): but newer task is running:
+            new Action(() => task2.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(1.Seconds());
         }
 
         private IEnumerable<string> GenerateCorrectDrainResult(int count)

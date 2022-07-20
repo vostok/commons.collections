@@ -280,6 +280,20 @@ namespace Vostok.Commons.Collections.Tests
             
             queue.Drain(drainResult, 0, 2).Should().Be(items - 2);
         }
+        
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_may_return_if_less_than_batch_drained()
+        {
+            queue.TryAdd("").Should().BeTrue();
+            queue.TryAdd("").Should().BeTrue();
+
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
+            queue.Drain(drainResult, 0, 1).Should().Be(1);
+
+            // note (kungurtsev, 20.07.2022): task is finished, but there isn't batch items
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
 
         private IEnumerable<string> GenerateCorrectDrainResult(int count)
         {

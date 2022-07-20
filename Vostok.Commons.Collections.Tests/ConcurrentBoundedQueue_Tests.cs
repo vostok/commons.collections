@@ -250,6 +250,46 @@ namespace Vostok.Commons.Collections.Tests
             new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
         }
+        
+        [TestCase(4)]
+        [TestCase(5)]
+        public void TryWaitForNewItemsBatchAsync_should_return_if_there_are_still_batch_events(int items)
+        {
+            for (int i = 0; i < items; i++)
+                queue.TryAdd("").Should().BeTrue();
+            
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+
+            queue.Drain(drainResult, 0, 2).Should().Be(2);
+            
+            task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+            
+            queue.Drain(drainResult, 0, 2).Should().Be(2);
+        }
+        
+        [TestCase(2)]
+        [TestCase(3)]
+        public void TryWaitForNewItemsBatchAsync_should_not_return_if_there_are_not_still_batch_events(int items)
+        {
+            for (int i = 0; i < items; i++)
+                queue.TryAdd("").Should().BeTrue();
+            
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+            
+            queue.Drain(drainResult, 0, 2).Should().Be(2);
+            
+            task = queue.TryWaitForNewItemsBatchAsync(100.Seconds(), 100.Seconds());
+            new Action(() => task.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(0.5.Seconds());
+            
+            queue.Drain(drainResult, 0, 2).Should().Be(items - 2);
+        }
 
         private IEnumerable<string> GenerateCorrectDrainResult(int count)
         {

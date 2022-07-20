@@ -133,6 +133,12 @@ namespace Vostok.Commons.Collections
                         canDrainAny.Set();
                     if (itemsCount >= drainBatchCount)
                         canDrainBatch.Set();
+                } else if (itemsCount < drainBatchCount)
+                {
+                    Interlocked.Exchange(ref canDrainBatch, new DrainSignal()).Set();
+
+                    if (itemsCount >= drainBatchCount)
+                        canDrainBatch.Set();
                 }
 
                 return resultCount;
@@ -168,7 +174,7 @@ namespace Vostok.Commons.Collections
         
         /// <summary>
         /// <para>Asynchronously waits until something is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.</para>
-        /// <para>If there are less than batch items to drain, waits <paramref name="delay"/> delay.</para>
+        /// <para>If there are less than batch items to drain, additionally waits <paramref name="delay"/> delay.</para>
         /// </summary>
         /// <returns><c>true</c> if there is something to drain, <c>false</c> otherwise.</returns>
         public async Task<bool> TryWaitForNewItemsBatchAsync(TimeSpan delay, TimeSpan timeout)

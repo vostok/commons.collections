@@ -15,15 +15,19 @@ namespace Vostok.Commons.Collections.Tests
     {
         [Explicit]
         [TestCase(1000, 4)]
+        [TestCase(1000, 4, true)]
         [TestCase(1000, 1)]
+        [TestCase(1000, 1, true)]
         [TestCase(2, 4)]
         [TestCase(2, 40)]
         [TestCase(1, 4)]
-        public void All_successfully_added_items_should_be_eventually_consumed(int capacity, int writersCount)
+        public void All_successfully_added_items_should_be_eventually_consumed(int capacity, int writersCount, bool useBatch = false)
         {
             var addedItemsCount = 0;
             var drainedItemsCount = 0;
-            var queue = new ConcurrentBoundedQueue<object>(capacity);
+            var (drainedFullBatches, drainedNonFullBatches) = (0, 0);
+            var buffer = new object[10];
+            var queue = new ConcurrentBoundedQueue<object>(capacity, useBatch ? buffer.Length : 1);
             var cancellation = new CancellationTokenSource();
             var cancellationToken = cancellation.Token;
 
@@ -50,16 +54,23 @@ namespace Vostok.Commons.Collections.Tests
                 {
                     trigger.Signal();
                     trigger.Wait();
-                    var buffer = new object[10];
                     while (!cancellation.IsCancellationRequested || writers.Any(w => !w.IsCompleted) || queue.Count > 0)
                     {
-                        if (!await queue.TryWaitForNewItemsAsync(100.Milliseconds()).ConfigureAwait(false))
+                        var tryWaitForNewItemsAsync = useBatch
+                            ? queue.TryWaitForNewItemsBatchAsync(10.Milliseconds(), 100.Milliseconds()).ConfigureAwait(false)
+                            : queue.TryWaitForNewItemsAsync(100.Milliseconds()).ConfigureAwait(false);
+                        if (!await tryWaitForNewItemsAsync)
                         {
                             if (writers.Any(w => !w.IsCompleted))
                                 throw new Exception("Wait seems to be stuck.");
                         }
 
                         var count = queue.Drain(buffer, 0, buffer.Length);
+                        if (count < buffer.Length)
+                            drainedNonFullBatches++;
+                        else
+                            drainedFullBatches++;
+                        
                         drainedItemsCount += count;
                     }
                 });
@@ -73,6 +84,8 @@ namespace Vostok.Commons.Collections.Tests
             reader.Wait();
 
             Console.WriteLine($"added: {addedItemsCount}, drained: {drainedItemsCount}");
+            if (useBatch)
+                Console.WriteLine($"full bathes: {drainedFullBatches}, non full bathes: {drainedNonFullBatches} ({100.0 * drainedNonFullBatches/(drainedNonFullBatches + drainedFullBatches)}%)");
 
             queue.Count.Should().Be(0);
             drainedItemsCount.Should().Be(addedItemsCount);

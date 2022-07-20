@@ -124,8 +124,10 @@ namespace Vostok.Commons.Collections
 
                 if (itemsCount == 0)
                 {
-                    Interlocked.Exchange(ref canDrainAny, new DrainSignal()).Set();
-                    Interlocked.Exchange(ref canDrainBatch, new DrainSignal()).Set();
+                    var canDrainStaleBatchSignal = Interlocked.Exchange(ref canDrainBatch, new DrainSignal());
+                    var canDrainStaleAnySignal = Interlocked.Exchange(ref canDrainAny, new DrainSignal());
+                    canDrainStaleAnySignal.Set();
+                    canDrainStaleBatchSignal.Set();
 
                     if (itemsCount > 0)
                         canDrainAny.Set();

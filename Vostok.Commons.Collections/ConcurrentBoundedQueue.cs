@@ -185,7 +185,7 @@ namespace Vostok.Commons.Collections
                 var waitTimeout = Task.Delay(timeout, cts.Token);
 
                 var result = await Task.WhenAny(canDrainBatch.Task, waitDelay, waitTimeout).ConfigureAwait(false);
-                if (result == canDrainBatch.Task)
+                if (result != waitDelay && result != waitTimeout)
                 {
                     cts.Cancel();
                     return true;

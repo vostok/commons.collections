@@ -27,7 +27,8 @@ namespace Vostok.Commons.Collections.Tests
             var drainedItemsCount = 0;
             var (drainedFullBatches, drainedNonFullBatches) = (0, 0);
             var buffer = new object[10];
-            var queue = new ConcurrentBoundedQueue<object>(capacity, useBatch ? buffer.Length : 1);
+            var drainBatchCount = Math.Min(capacity, buffer.Length);
+            var queue = new ConcurrentBoundedQueue<object>(capacity, drainBatchCount);
             var cancellation = new CancellationTokenSource();
             var cancellationToken = cancellation.Token;
 
@@ -66,7 +67,7 @@ namespace Vostok.Commons.Collections.Tests
                         }
 
                         var count = queue.Drain(buffer, 0, buffer.Length);
-                        if (count < buffer.Length)
+                        if (count < drainBatchCount)
                             drainedNonFullBatches++;
                         else
                             drainedFullBatches++;
@@ -84,8 +85,7 @@ namespace Vostok.Commons.Collections.Tests
             reader.Wait();
 
             Console.WriteLine($"added: {addedItemsCount}, drained: {drainedItemsCount}");
-            if (useBatch)
-                Console.WriteLine($"full bathes: {drainedFullBatches}, non full bathes: {drainedNonFullBatches} ({100.0 * drainedNonFullBatches/(drainedNonFullBatches + drainedFullBatches)}%)");
+            Console.WriteLine($"full bathes: {drainedFullBatches}, non full bathes: {drainedNonFullBatches} ({100.0 * drainedNonFullBatches/(drainedNonFullBatches + drainedFullBatches)}%)");
 
             queue.Count.Should().Be(0);
             drainedItemsCount.Should().Be(addedItemsCount);
@@ -96,7 +96,7 @@ namespace Vostok.Commons.Collections.Tests
         {
             for (var j = 0; j < 10; ++j)
             {
-                var queue = new ConcurrentBoundedQueue<object>(100);
+                var queue = new ConcurrentBoundedQueue<object>(100, 10);
                 var o = new object();
 
                 var addTask = Task.Run(
@@ -112,7 +112,7 @@ namespace Vostok.Commons.Collections.Tests
                 var drainTask = Task.Run(
                     () =>
                     {
-                        var arr = new object[1000];
+                        var arr = new object[10];
                         while (true)
                         {
                             var drained = queue.Drain(arr, 0, arr.Length);
@@ -125,6 +125,8 @@ namespace Vostok.Commons.Collections.Tests
 
                 if (queue.WaitForNewItemsAsync().IsCompleted && queue.Count == 0)
                     Assert.Fail("Queue is broken: TryWaitForNewItemsAsync is completed, but queue is empty.");
+                if (queue.WaitForNewItemsBatchAsync().IsCompleted && queue.Count < 10)
+                    Assert.Fail("Queue is broken: TryWaitForNewItemsBatchAsync is completed, but items is not enough.");
             }
         }
     }

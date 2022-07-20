@@ -81,7 +81,7 @@ namespace Vostok.Commons.Collections
                             Interlocked.Exchange(ref items[currentFrontPtr], item);
 
                             canDrainAny.Set();
-                            if (currentCount + 1 >= drainBatchCount)
+                            if (currentCount + 1 >= drainBatchCount && itemsCount >= drainBatchCount)
                                 canDrainBatch.Set();
 
                             return true;
@@ -149,6 +149,8 @@ namespace Vostok.Commons.Collections
         /// Asynchronously waits until something is available to <see cref="Drain"/>.
         /// </summary>
         public Task WaitForNewItemsAsync() => canDrainAny.Task;
+        
+        internal Task WaitForNewItemsBatchAsync() => canDrainBatch.Task;
 
         /// <summary>
         /// Asynchronously waits until something is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.

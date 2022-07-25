@@ -17,24 +17,32 @@ namespace Vostok.Commons.Collections
         where T : class
     {
         private readonly T[] items;
+        private readonly int drainBatchCount;
         private readonly object drainLock;
 
         private int frontPtr;
         private volatile int itemsCount;
         private volatile int backPtr;
-        private volatile DrainSignal canDrain;
+        private volatile DrainSignal canDrainAny;
+        private volatile DrainSignal canDrainBatch;
 
         /// <summary>
         /// Create a new <see cref="ConcurrentBoundedQueue{T}"/> with the given <paramref name="capacity"/>.
         /// </summary>
-        public ConcurrentBoundedQueue(int capacity)
+        public ConcurrentBoundedQueue(int capacity, int drainBatchCount = 1)
         {
             if (capacity < 0)
                 throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be non-negative");
+            if (drainBatchCount > capacity)
+                throw new ArgumentOutOfRangeException(nameof(drainBatchCount), "The drain count must be less or equal than capacity");
+            if (drainBatchCount < 1)
+                throw new ArgumentOutOfRangeException(nameof(capacity), "The drain count must be positive");
 
             items = new T[capacity];
             drainLock = new object();
-            canDrain = new DrainSignal();
+            canDrainAny = new DrainSignal();
+            canDrainBatch = new DrainSignal();
+            this.drainBatchCount = drainBatchCount;
         }
 
         /// <summary>
@@ -72,7 +80,9 @@ namespace Vostok.Commons.Collections
                         {
                             Interlocked.Exchange(ref items[currentFrontPtr], item);
 
-                            canDrain.Set();
+                            canDrainAny.Set();
+                            if (currentCount + 1 >= drainBatchCount && itemsCount >= drainBatchCount)
+                                canDrainBatch.Set();
 
                             return true;
                         }
@@ -114,10 +124,21 @@ namespace Vostok.Commons.Collections
 
                 if (itemsCount == 0)
                 {
-                    Interlocked.Exchange(ref canDrain, new DrainSignal()).Set();
+                    var canDrainStaleBatchSignal = Interlocked.Exchange(ref canDrainBatch, new DrainSignal());
+                    var canDrainStaleAnySignal = Interlocked.Exchange(ref canDrainAny, new DrainSignal());
+                    canDrainStaleAnySignal.Set();
+                    canDrainStaleBatchSignal.Set();
 
                     if (itemsCount > 0)
-                        canDrain.Set();
+                        canDrainAny.Set();
+                    if (itemsCount >= drainBatchCount)
+                        canDrainBatch.Set();
+                } else if (itemsCount < drainBatchCount)
+                {
+                    Interlocked.Exchange(ref canDrainBatch, new DrainSignal()).Set();
+
+                    if (itemsCount >= drainBatchCount)
+                        canDrainBatch.Set();
                 }
 
                 return resultCount;
@@ -127,7 +148,9 @@ namespace Vostok.Commons.Collections
         /// <summary>
         /// Asynchronously waits until something is available to <see cref="Drain"/>.
         /// </summary>
-        public Task WaitForNewItemsAsync() => canDrain.Task;
+        public Task WaitForNewItemsAsync() => canDrainAny.Task;
+        
+        internal Task WaitForNewItemsBatchAsync() => canDrainBatch.Task;
 
         /// <summary>
         /// Asynchronously waits until something is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.
@@ -135,16 +158,38 @@ namespace Vostok.Commons.Collections
         /// <returns><c>true</c> if there is something to drain, <c>false</c> otherwise.</returns>
         public async Task<bool> TryWaitForNewItemsAsync(TimeSpan timeout)
         {
-            if (canDrain.Task.IsCompleted)
+            if (canDrainAny.Task.IsCompleted)
                 return true;
 
             using (var cts = new CancellationTokenSource())
             {
-                var delay = Task.Delay(timeout, cts.Token);
+                var waitTimeout = Task.Delay(timeout, cts.Token);
 
-                var result = await Task.WhenAny(canDrain.Task, delay).ConfigureAwait(false);
-                if (result == delay)
+                var result = await Task.WhenAny(canDrainAny.Task, waitTimeout).ConfigureAwait(false);
+                if (result == waitTimeout)
                     return false;
+
+                cts.Cancel();
+                return true;
+            }
+        }
+        
+        /// <summary>
+        /// Asynchronously waits until batch is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.
+        /// </summary>
+        /// <returns><c>true</c> if there is something to drain, <c>false</c> otherwise.</returns>
+        public async Task<bool> TryWaitForNewItemsBatchAsync(TimeSpan timeout)
+        {
+            if (canDrainBatch.Task.IsCompleted)
+                return true;
+
+            using (var cts = new CancellationTokenSource())
+            {
+                var waitTimeout = Task.Delay(timeout, cts.Token);
+
+                var result = await Task.WhenAny(canDrainBatch.Task, waitTimeout).ConfigureAwait(false);
+                if (result == waitTimeout)
+                    return canDrainAny.Task.IsCompleted;
 
                 cts.Cancel();
                 return true;

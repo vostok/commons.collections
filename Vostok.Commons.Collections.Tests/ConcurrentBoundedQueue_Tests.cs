@@ -12,6 +12,7 @@ namespace Vostok.Commons.Collections.Tests
     internal class ConcurrentBoundedQueue_Tests
     {
         private const int Capacity = 5;
+        private const int Batch = 2;
 
         private ConcurrentBoundedQueue<string> queue;
         private string[] drainResult;
@@ -19,7 +20,7 @@ namespace Vostok.Commons.Collections.Tests
         [SetUp]
         public void SetUp()
         {
-            queue = new ConcurrentBoundedQueue<string>(Capacity);
+            queue = new ConcurrentBoundedQueue<string>(Capacity, Batch);
             drainResult = new string[Capacity];
         }
 
@@ -195,6 +196,107 @@ namespace Vostok.Commons.Collections.Tests
 
             new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
                 .ShouldPassIn(1.Seconds());
+        }
+        
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_without_items()
+        {
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Milliseconds());
+
+            task.IsCompleted.Should().BeFalse();
+
+            new Action(() => (task.IsCompleted && !task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+        
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_should_return_after_timeout_without_enough_items()
+        {
+            var task = queue.TryWaitForNewItemsBatchAsync(1.Seconds());
+
+            queue.TryAdd("").Should().BeTrue();
+            
+            new Action(() => task.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(0.5.Seconds());
+
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_should_return_after_batch_events_are_added()
+        {
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
+
+            queue.TryAdd("").Should().BeTrue();
+            
+            new Action(() => task.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(0.5.Seconds());
+            
+            queue.TryAdd("").Should().BeTrue();
+
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+        }
+        
+        [TestCase(4)]
+        [TestCase(5)]
+        public void TryWaitForNewItemsBatchAsync_should_return_if_there_are_still_batch_events(int items)
+        {
+            for (int i = 0; i < items; i++)
+                queue.TryAdd("").Should().BeTrue();
+            
+            var task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+
+            queue.Drain(drainResult, 0, 2).Should().Be(2);
+            
+            task = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+            
+            queue.Drain(drainResult, 0, 2).Should().Be(2);
+        }
+        
+        [TestCase(2)]
+        [TestCase(3)]
+        public void TryWaitForNewItemsBatchAsync_should_not_return_if_there_are_not_still_batch_events(int items)
+        {
+            for (int i = 0; i < items; i++)
+                queue.TryAdd("").Should().BeTrue();
+            
+            var task = queue.TryWaitForNewItemsBatchAsync(1.Seconds());
+            new Action(() => (task.IsCompleted && task.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+            
+            queue.Drain(drainResult, 0, 2).Should().Be(2);
+            
+            task = queue.TryWaitForNewItemsBatchAsync(1.Seconds());
+            new Action(() => task.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(0.5.Seconds());
+            new Action(() => (task.IsCompleted && task.Result == (items - 2 > 0)).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+            
+            queue.Drain(drainResult, 0, 2).Should().Be(items - 2);
+        }
+        
+        [Test]
+        public void TryWaitForNewItemsBatchAsync_may_return_if_less_than_batch_drained()
+        {
+            queue.TryAdd("").Should().BeTrue();
+            queue.TryAdd("").Should().BeTrue();
+
+            var task1 = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
+            queue.Drain(drainResult, 0, 1).Should().Be(1);
+            var task2 = queue.TryWaitForNewItemsBatchAsync(100.Seconds());
+
+            // note (kungurtsev, 20.07.2022): task is finished, but there isn't batch items
+            new Action(() => (task1.IsCompleted && task1.Result).Should().BeTrue())
+                .ShouldPassIn(1.Seconds());
+            // note (kungurtsev, 20.07.2022): but newer task is running:
+            new Action(() => task2.IsCompleted.Should().BeFalse())
+                .ShouldNotFailIn(1.Seconds());
         }
 
         private IEnumerable<string> GenerateCorrectDrainResult(int count)

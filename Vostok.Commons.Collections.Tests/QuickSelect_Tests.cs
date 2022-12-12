@@ -13,11 +13,11 @@ namespace Vostok.Commons.Collections.Tests
         [TestCase(QuickselectSortOrder.Descending)]
         public void Should_work_in_trivial_cases(QuickselectSortOrder order)
         {
-            var items = new []{1, 7, 4, 15, 34, -54, 5};
+            var items = new[] {1, 7, 4, 15, 34, -54, 5};
 
-            items.QuickSelect(0, order:order).Should().Be(order == QuickselectSortOrder.Ascending ? items.Min() : items.Max());
-            items.QuickSelect(items.Length, order:order).Should().Be(order == QuickselectSortOrder.Ascending ? items.Max() : items.Min());
-            items.QuickSelect(2, order:order).Should().Be(order == QuickselectSortOrder.Ascending ? 4 : 7);
+            items.QuickSelect(0, order: order).Should().Be(order == QuickselectSortOrder.Ascending ? items.Min() : items.Max());
+            items.QuickSelect(items.Length, order: order).Should().Be(order == QuickselectSortOrder.Ascending ? items.Max() : items.Min());
+            items.QuickSelect(2, order: order).Should().Be(order == QuickselectSortOrder.Ascending ? 4 : 7);
         }
 
         [TestCase(QuickselectSortOrder.Ascending)]

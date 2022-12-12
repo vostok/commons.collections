@@ -1,18 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\vostok.devtools\library-common-props\Test-Project.props" />
-  <Import Project="..\..\vostok.devtools\git-commit-to-assembly-title\Vostok.Tools.GitCommit2AssemblyTitle.props" />
-  <PropertyGroup>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\..\vostok.commons.testing\Vostok.Commons.Testing\AssertionAssertions.cs" Link="Commons\AssertionAssertions.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.11.1" />
-    <PackageReference Include="FluentAssertions" Version="5.4.1" />
-    <PackageReference Include="NSubstitute" Version="3.1.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Vostok.Commons.Collections\Vostok.Commons.Collections.csproj" />
-  </ItemGroup>
+    <Import Project="..\..\vostok.devtools\library-common-props\Test-Project.props"/>
+    <Import Project="..\..\vostok.devtools\git-commit-to-assembly-title\Vostok.Tools.GitCommit2AssemblyTitle.props"/>
+    <PropertyGroup>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="..\..\vostok.commons.testing\Vostok.Commons.Testing\AssertionAssertions.cs" Link="Commons\AssertionAssertions.cs"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.11.1"/>
+        <PackageReference Include="FluentAssertions" Version="5.4.1"/>
+        <PackageReference Include="NSubstitute" Version="3.1.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Vostok.Commons.Collections\Vostok.Commons.Collections.csproj"/>
+    </ItemGroup>
 </Project>

@@ -133,7 +133,8 @@ namespace Vostok.Commons.Collections
                         canDrainAny.Set();
                     if (itemsCount >= drainBatchCount)
                         canDrainBatch.Set();
-                } else if (itemsCount < drainBatchCount)
+                }
+                else if (itemsCount < drainBatchCount)
                 {
                     Interlocked.Exchange(ref canDrainBatch, new DrainSignal()).Set();
 
@@ -149,8 +150,6 @@ namespace Vostok.Commons.Collections
         /// Asynchronously waits until something is available to <see cref="Drain"/>.
         /// </summary>
         public Task WaitForNewItemsAsync() => canDrainAny.Task;
-        
-        internal Task WaitForNewItemsBatchAsync() => canDrainBatch.Task;
 
         /// <summary>
         /// Asynchronously waits until something is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.
@@ -173,7 +172,7 @@ namespace Vostok.Commons.Collections
                 return true;
             }
         }
-        
+
         /// <summary>
         /// Asynchronously waits until batch is available to <see cref="Drain"/> or the provided <paramref name="timeout"/> expires.
         /// </summary>
@@ -195,6 +194,8 @@ namespace Vostok.Commons.Collections
                 return true;
             }
         }
+
+        internal Task WaitForNewItemsBatchAsync() => canDrainBatch.Task;
 
         private class DrainSignal : TaskCompletionSource<bool>
         {

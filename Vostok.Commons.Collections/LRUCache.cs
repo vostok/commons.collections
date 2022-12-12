@@ -120,7 +120,7 @@ namespace Vostok.Commons.Collections
             }
         }
 
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => 
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() =>
             map.Select(pair => new KeyValuePair<TKey, TValue>(pair.Value.Value.key, pair.Value.Value.value)).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() =>

@@ -149,7 +149,7 @@ namespace Vostok.Commons.Collections.Tests
                 .Set("k3", "v3");
 
             dictionary.AppendUnsafe("k2", "vx");
-            
+
             dictionary.Count.Should().Be(4);
             dictionary.Keys.Should().BeEquivalentTo("k1", "k2", "k3", "k2");
         }

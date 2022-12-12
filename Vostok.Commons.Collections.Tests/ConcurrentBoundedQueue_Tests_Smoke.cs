@@ -71,7 +71,7 @@ namespace Vostok.Commons.Collections.Tests
                             drainedNonFullBatches++;
                         else
                             drainedFullBatches++;
-                        
+
                         drainedItemsCount += count;
                     }
                 });
@@ -85,7 +85,7 @@ namespace Vostok.Commons.Collections.Tests
             reader.Wait();
 
             Console.WriteLine($"added: {addedItemsCount}, drained: {drainedItemsCount}");
-            Console.WriteLine($"full bathes: {drainedFullBatches}, non full bathes: {drainedNonFullBatches} ({100.0 * drainedNonFullBatches/(drainedNonFullBatches + drainedFullBatches)}%)");
+            Console.WriteLine($"full bathes: {drainedFullBatches}, non full bathes: {drainedNonFullBatches} ({100.0 * drainedNonFullBatches / (drainedNonFullBatches + drainedFullBatches)}%)");
 
             queue.Count.Should().Be(0);
             drainedItemsCount.Should().Be(addedItemsCount);

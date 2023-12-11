@@ -1,3 +1,7 @@
+## 0.1.7 (11-12-2023):
+
+Added drain to ConcurrentBoundedQueue.
+
 ## 0.1.6 (06-12-2021):
 
 Added `net6.0` target.

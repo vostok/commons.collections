@@ -7,6 +7,13 @@ namespace Vostok.Commons.Collections
     [PublicAPI]
     internal static class ConcurrentDictionaryExtensions
     {
+        public static bool Remove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key)
+        {
+            TValue value;
+
+            return dictionary.TryRemove(key, out value);
+        }
+        
         public static bool Remove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value)
         {
             return dictionary.Remove(new KeyValuePair<TKey, TValue>(key, value));

@@ -1,3 +1,7 @@
+## 0.1.8 (09-12-2024): 
+
+Bump NuGet deps versions
+
 ## 0.1.7 (11-12-2023):
 
 Added drain to ConcurrentBoundedQueue.

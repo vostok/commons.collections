@@ -12,6 +12,16 @@ notests *default:
 
   install:
     - Vostok.Commons.Collections/bin/Release/netstandard2.0/Vostok.Commons.Collections.dll
+    - groups:
+        - target-framework: "netstandard2.0"
+          libraries:
+            - Vostok.Commons.Collections/bin/Release/netstandard2.0/Vostok.Commons.Collections.dll
+        - target-framework: "net6.0"
+          libraries:
+            - Vostok.Commons.Collections/bin/Release/net6.0/Vostok.Commons.Collections.dll
+        - target-framework: "net8.0"
+          libraries:
+            - Vostok.Commons.Collections/bin/Release/net8.0/Vostok.Commons.Collections.dll
 
   deps:
     - vostok.devtools
@@ -20,6 +30,21 @@ full-build > notests:
   build:
     target: Vostok.Commons.Collections.sln
     configuration: Release
+    tool:
+      name: dotnet
+
+  install:
+    - Vostok.Commons.Collections/bin/Release/netstandard2.0/Vostok.Commons.Collections.dll
+    - groups:
+        - target-framework: "netstandard2.0"
+          libraries:
+            - Vostok.Commons.Collections/bin/Release/netstandard2.0/Vostok.Commons.Collections.dll
+        - target-framework: "net6.0"
+          libraries:
+            - Vostok.Commons.Collections/bin/Release/net6.0/Vostok.Commons.Collections.dll
+        - target-framework: "net8.0"
+          libraries:
+            - Vostok.Commons.Collections/bin/Release/net8.0/Vostok.Commons.Collections.dll
 
   deps:
     - -vostok.devtools
